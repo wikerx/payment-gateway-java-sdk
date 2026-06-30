@@ -1,6 +1,6 @@
 # Payment Gateway Java SDK
 
-商户服务端 Java SDK，用于对接 Payment Gateway OpenAPI。SDK 会按后端接口实际协议生成 `Authorization`，对新协议代收创建请求发送 Bearer JWT 和加密 data，对历史接口发送 Payment API 私钥鉴权，解析响应外壳，并在响应 `data` 为 compact 密文时自动解密。
+商户服务端 Java SDK，用于对接 Payment Gateway OpenAPI。SDK 会按当前 `@VerificationAndProcessing` 注解加密协议生成 `Authorization: Bearer <jwt>`，按 `livemode` 选择沙盒或生产环境，对 POST 请求发送 `livemode + data` 加密外壳，并自动解密响应 `data`。
 
 > 本 SDK 只能用于商户服务端。禁止放在浏览器、移动端 App、桌面客户端或任何会暴露 JWT 密钥、RSA 私钥、卡号、CVC 的环境。
 
@@ -26,16 +26,23 @@
 将配置文件放到商户服务端 classpath，例如 `merchant-config.properties`。
 
 ```properties
-merchant.id=<merchant-id>
-merchant.api.private-key=<merchant-api-private-key>
-merchant.platform.public-key-file=classpath:keys/platform-request-public-key.pem
-merchant.response.private-key-file=classpath:keys/merchant-response-private-key.pem
-merchant.openapi.base-url=https://payment-gateway.example.com
+payment.gateway.base-url=https://payment-gateway.example.com
+payment.gateway.merchant-no=<merchant-no>
+payment.gateway.livemode=false
+payment.gateway.api-private-key=<merchant-api-private-key>
+payment.gateway.platform-request-public-key-path=classpath:keys/platform-request-public-key.pem
+payment.gateway.merchant-response-private-key-path=classpath:keys/merchant-response-private-key.pem
 ```
 
-也支持文本密钥，文件配置优先于文本配置：
+`livemode=false` 只请求沙盒 / 测试数据源，`livemode=true` 只请求生产数据源。SDK 不根据 API 私钥是否包含 `_test_` 推断环境。
+
+也兼容旧配置名和文本密钥，文件配置优先于文本配置：
 
 ```properties
+merchant.openapi.base-url=https://payment-gateway.example.com
+merchant.id=<merchant-no>
+merchant.livemode=false
+merchant.api.private-key=<merchant-api-private-key>
 merchant.platform.public-key=<x509-public-key-base64-or-pem>
 merchant.response.private-key=<pkcs8-private-key-base64-or-pem>
 ```
@@ -138,8 +145,10 @@ PaymentGatewayResult<CustomerResponse> result = client.createCustomer(request);
 
 ## 当前协议说明
 
-- 代收创建 `/pay-api/trade/payment`：按后端 `@VerificationAndProcessing` 走 Bearer JWT + `{"data":"compact密文"}`，JWT 使用商户 API 私钥做 HS256 签名。
-- 代付、退款、余额、客户和 GET 查询：当前后端未统一标注新加密注解，SDK 按实际代码发送 `Authorization: Payment Base64(apiPrivateKey)` + 普通 JSON/GET，响应 `data` 如为密文字符串仍会自动解密。
+- 已集成接口统一按后端 `@VerificationAndProcessing` 走 Bearer JWT。JWT 使用商户 API 私钥做 HS256 签名，并包含 `merchantId`、`livemode`、`jti`、`iat`、`exp`。
+- POST 请求体格式为 `{"livemode":false,"data":"compact密文"}`；GET 请求无 body，但 JWT 中仍必须携带 `livemode`。
+- 响应外层包含 `livemode`。SDK 会校验响应 `livemode` 与本地配置一致，不一致时抛出 `PaymentGatewayResponseException`。
+- SDK 当前封装了代收、退款、代付、余额、客户接口，并提供 `PaymentGatewayMerchantCasesTest` 作为商户可直接参考的完整 case。代收、退款、代付、余额走当前注解加密协议；客户接口按当前网关模块边界继续走历史 Payment 鉴权。
 - compact payload header 固定：`typ=PAYMENT-PAYLOAD`、`alg=RSA-OAEP-256`、`enc=A256GCM`，不输出 `kid`。
 
 ## 异常
@@ -163,10 +172,10 @@ SDK 只依赖 `slf4j-api`。日志仅记录 event、method、path、脱敏商户
 ## FAQ
 
 **为什么公开文档仍写旧签名？**  
-后端当前是新旧协议并存：带 `@VerificationAndProcessing` 的接口使用 Bearer JWT + 加密 data；未带注解的接口继续使用 `Payment Base64(apiPrivateKey)`。
+后端当前是新旧协议并存：本 SDK 已集成的商户 OpenAPI 走 `@VerificationAndProcessing`；未迁移到注解链路的历史接口仍可能继续使用 `Payment Base64(apiPrivateKey)`。
 
-**为什么只有代收创建默认加密请求体？**  
-后端当前只有代收创建方法标注了 `@VerificationAndProcessing`。其余第一版接口按现有后端普通请求形态发送，待后端统一注解后 SDK 可切换为加密 POST。
+**为什么 GET 查询没有请求体 data？**  
+GET 查询通过 Bearer JWT 携带 `merchantId + livemode` 完成鉴权和数据源路由，响应 `data` 仍按商户响应公钥加密。
 
 **是否可以在前端使用？**  
 不可以。SDK 会持有 JWT 密钥、平台公钥和商户响应私钥，必须只运行在商户服务端。

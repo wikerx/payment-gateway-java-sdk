@@ -23,6 +23,7 @@ class MerchantJwtSignerTest {
         String token = new MerchantJwtSigner().sign(
                 PaymentGatewayTestSupport.merchantId(),
                 PaymentGatewayTestSupport.merchantJwtSecret(),
+                PaymentGatewayTestSupport.livemode(),
                 "ORDER-1",
                 issuedAt,
                 180);
@@ -35,6 +36,7 @@ class MerchantJwtSignerTest {
         assertThat(claims.getIssuer()).isEqualTo("merchant");
         assertThat(claims.getId()).isEqualTo("ORDER-1");
         assertThat(claims.get("merchantId", String.class)).isEqualTo(PaymentGatewayTestSupport.merchantId());
+        assertThat(claims.get("livemode", Boolean.class)).isEqualTo(PaymentGatewayTestSupport.livemode());
         assertThat(claims.get("aud", List.class)).contains("gateway");
     }
 }

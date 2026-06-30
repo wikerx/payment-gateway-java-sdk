@@ -4,6 +4,8 @@ import com.wikerx.payment.gateway.sdk.PaymentGatewayClientConfig;
 import com.wikerx.payment.gateway.sdk.crypto.RsaKeyUtils;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Paths;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MerchantConfigLoaderTest {
@@ -20,6 +22,22 @@ class MerchantConfigLoaderTest {
         assertThat(config.getPlatformPublicKey()).isNotBlank();
         assertThat(config.getMerchantResponsePrivateKey()).isNotBlank();
         assertThat(config.getBaseUrl()).isEqualTo("https://payment-gateway.example.com");
+        assertThat(config.getLivemode()).isFalse();
+        assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
+        assertThat(config.getReadTimeoutMs()).isEqualTo(10000);
+    }
+
+    /**
+     * 验证配置文件可从文件系统路径加载。
+     */
+    @Test
+    void shouldLoadConfigFromFileSystemPath() {
+        String configPath = Paths.get("src/test/resources/merchant-config.properties").toAbsolutePath().toString();
+
+        PaymentGatewayClientConfig config = MerchantConfigLoader.load(configPath);
+
+        assertThat(config.getMerchantId()).isEqualTo("200046");
+        assertThat(config.getLivemode()).isFalse();
     }
 
     /**

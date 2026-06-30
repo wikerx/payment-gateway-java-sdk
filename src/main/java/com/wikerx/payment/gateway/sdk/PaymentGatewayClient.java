@@ -198,7 +198,7 @@ public class PaymentGatewayClient {
      * @return 代收交易响应
      */
     public PaymentGatewayResult<PaymentResponse> retrievePayment(String tradeNo) {
-        return get(String.format(PaymentGatewayConstants.PAYMENT_RETRIEVE_PATH, encodePath(requireText(tradeNo, "tradeNo"))),
+        return getSecured(String.format(PaymentGatewayConstants.PAYMENT_RETRIEVE_PATH, encodePath(requireText(tradeNo, "tradeNo"))),
                 PaymentResponse.class,
                 "query-" + UUID.randomUUID());
     }
@@ -211,7 +211,7 @@ public class PaymentGatewayClient {
      */
     public PaymentGatewayResult<PayoutResponse> createPayout(PayoutCreateRequest request) {
         validatePayoutCreateRequest(request);
-        return postJson(PaymentGatewayConstants.PAYOUT_CREATE_PATH,
+        return postEncrypted(PaymentGatewayConstants.PAYOUT_CREATE_PATH,
                 request,
                 PayoutResponse.class,
                 requireText(request.getOrderNo(), "orderNo"));
@@ -224,7 +224,7 @@ public class PaymentGatewayClient {
      * @return 代付交易响应
      */
     public PaymentGatewayResult<PayoutResponse> retrievePayout(String tradeNo) {
-        return get(String.format(PaymentGatewayConstants.PAYOUT_RETRIEVE_PATH, encodePath(requireText(tradeNo, "tradeNo"))),
+        return getSecured(String.format(PaymentGatewayConstants.PAYOUT_RETRIEVE_PATH, encodePath(requireText(tradeNo, "tradeNo"))),
                 PayoutResponse.class,
                 "query-" + UUID.randomUUID());
     }
@@ -238,7 +238,7 @@ public class PaymentGatewayClient {
     public PaymentGatewayResult<PayoutCancelResponse> cancelPayout(PayoutCancelRequest request) {
         requireObject(request, "request");
         String jti = StringUtils.defaultIfBlank(request.getTradeNo(), request.getOrderNo());
-        return postJson(PaymentGatewayConstants.PAYOUT_CANCEL_PATH,
+        return postEncrypted(PaymentGatewayConstants.PAYOUT_CANCEL_PATH,
                 request,
                 PayoutCancelResponse.class,
                 requireText(jti, "tradeNo or orderNo"));
@@ -254,7 +254,7 @@ public class PaymentGatewayClient {
         validateRefundCreateRequest(request);
         String jti = StringUtils.defaultIfBlank(request.getCharge(),
                 request.getTradeNo() + "-" + request.getRefundAmount());
-        return postJson(PaymentGatewayConstants.REFUND_CREATE_PATH, request, RefundResponse.class, jti);
+        return postEncrypted(PaymentGatewayConstants.REFUND_CREATE_PATH, request, RefundResponse.class, jti);
     }
 
     /**
@@ -264,7 +264,7 @@ public class PaymentGatewayClient {
      * @return 退款响应
      */
     public PaymentGatewayResult<RefundResponse> retrieveRefund(String refundNo) {
-        return get(String.format(PaymentGatewayConstants.REFUND_RETRIEVE_PATH, encodePath(requireText(refundNo, "refundNo"))),
+        return getSecured(String.format(PaymentGatewayConstants.REFUND_RETRIEVE_PATH, encodePath(requireText(refundNo, "refundNo"))),
                 RefundResponse.class,
                 "query-" + UUID.randomUUID());
     }
@@ -275,7 +275,7 @@ public class PaymentGatewayClient {
      * @return 余额响应列表
      */
     public PaymentGatewayResult<List<BalanceResponse>> retrieveBalances() {
-        return getList(PaymentGatewayConstants.BALANCE_RETRIEVE_PATH,
+        return getListSecured(PaymentGatewayConstants.BALANCE_RETRIEVE_PATH,
                 BalanceResponse.class,
                 "balance-" + UUID.randomUUID());
     }
@@ -288,7 +288,7 @@ public class PaymentGatewayClient {
      */
     public PaymentGatewayResult<List<BalanceResponse>> retrieveBalances(String currency) {
         String path = PaymentGatewayConstants.BALANCE_RETRIEVE_PATH + "?currency=" + encodeQuery(requireText(currency, "currency"));
-        return getList(path, BalanceResponse.class, "balance-" + UUID.randomUUID());
+        return getListSecured(path, BalanceResponse.class, "balance-" + UUID.randomUUID());
     }
 
     /**
@@ -329,7 +329,7 @@ public class PaymentGatewayClient {
         requireObject(request, "request");
         String requestJson = JsonSupport.toJson(request);
         String encryptedData = payloadCrypto.encrypt(requestJson, platformPublicKey);
-        return execute("POST", path, JsonSupport.toJson(new EncryptedRequest(encryptedData)), responseType, jwtId,
+        return execute("POST", path, JsonSupport.toJson(new EncryptedRequest(config.getLivemode(), encryptedData)), responseType, jwtId,
                 AuthorizationMode.BEARER_JWT);
     }
 
@@ -362,6 +362,19 @@ public class PaymentGatewayClient {
     }
 
     /**
+     * 发送新协议 GET 请求，使用 Bearer JWT 并自动解密响应 data。
+     *
+     * @param path 接口路径
+     * @param responseType 响应 data 类型
+     * @param jwtId JWT jti
+     * @param <T> 响应 data 类型
+     * @return SDK 响应
+     */
+    public <T> PaymentGatewayResult<T> getSecured(String path, Class<T> responseType, String jwtId) {
+        return execute("GET", path, null, responseType, jwtId, AuthorizationMode.BEARER_JWT);
+    }
+
+    /**
      * 发送 GET 请求并解析列表 data。
      *
      * @param path 接口路径
@@ -372,6 +385,20 @@ public class PaymentGatewayClient {
      */
     public <T> PaymentGatewayResult<List<T>> getList(String path, Class<T> elementType, String jwtId) {
         PaymentGatewayResult<JsonNode> rawResult = executeRaw("GET", path, null, jwtId, AuthorizationMode.PAYMENT_KEY);
+        return convertListResult(rawResult, elementType);
+    }
+
+    /**
+     * 发送新协议 GET 请求并解析列表 data。
+     *
+     * @param path 接口路径
+     * @param elementType 列表元素类型
+     * @param jwtId JWT jti
+     * @param <T> 列表元素类型
+     * @return SDK 列表响应
+     */
+    public <T> PaymentGatewayResult<List<T>> getListSecured(String path, Class<T> elementType, String jwtId) {
+        PaymentGatewayResult<JsonNode> rawResult = executeRaw("GET", path, null, jwtId, AuthorizationMode.BEARER_JWT);
         return convertListResult(rawResult, elementType);
     }
 
@@ -447,6 +474,7 @@ public class PaymentGatewayClient {
     }
 
     private <T> PaymentGatewayResult<T> convertResult(PaymentGatewayResult<JsonNode> rawResult, Class<T> responseType) {
+        validateResponseLivemode(rawResult.getLivemode());
         PaymentGatewayResult<T> result = new PaymentGatewayResult<T>();
         result.setCode(rawResult.getCode());
         result.setMsg(rawResult.getMsg());
@@ -459,6 +487,7 @@ public class PaymentGatewayClient {
     }
 
     private <T> PaymentGatewayResult<List<T>> convertListResult(PaymentGatewayResult<JsonNode> rawResult, Class<T> elementType) {
+        validateResponseLivemode(rawResult.getLivemode());
         PaymentGatewayResult<List<T>> result = new PaymentGatewayResult<List<T>>();
         result.setCode(rawResult.getCode());
         result.setMsg(rawResult.getMsg());
@@ -486,6 +515,12 @@ public class PaymentGatewayClient {
         }
     }
 
+    private void validateResponseLivemode(Boolean responseLivemode) {
+        if (responseLivemode != null && !responseLivemode.equals(config.getLivemode())) {
+            throw new PaymentGatewayResponseException("Payment Gateway response livemode is inconsistent");
+        }
+    }
+
     private Map<String, String> headers(String jwtId, String requestId, boolean withBody, AuthorizationMode authorizationMode) {
         Map<String, String> headers = new HashMap<String, String>(PaymentGatewayConstants.HTTP_HEADER_MAP_SIZE);
         headers.put(PaymentGatewayConstants.HEADER_AUTHORIZATION, authorizationValue(jwtId, authorizationMode));
@@ -508,6 +543,7 @@ public class PaymentGatewayClient {
         String token = jwtSigner.sign(
                 config.getMerchantId(),
                 config.getMerchantJwtSecret(),
+                config.getLivemode(),
                 requireText(jwtId, "jwtId"),
                 now,
                 config.getJwtTtlSeconds());

@@ -2,6 +2,7 @@ package com.wikerx.payment.gateway.sdk.client;
 
 import com.wikerx.payment.gateway.sdk.PaymentGatewayClient;
 import com.wikerx.payment.gateway.sdk.PaymentGatewayResult;
+import com.wikerx.payment.gateway.sdk.exception.PaymentGatewayResponseException;
 import com.wikerx.payment.gateway.sdk.model.balance.BalanceResponse;
 import com.wikerx.payment.gateway.sdk.model.common.CardPaymentMethodData;
 import com.wikerx.payment.gateway.sdk.model.payment.CardPaymentRequest;
@@ -13,13 +14,12 @@ import com.wikerx.payment.gateway.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.wikerx.payment.gateway.sdk.testkit.PaymentGatewayTestSupport;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PaymentGatewayClientTest {
 
@@ -37,8 +37,8 @@ class PaymentGatewayClientTest {
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/payment");
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
         assertThat(transport.getLastRequest().getBody()).contains("\"data\"");
+        assertThat(transport.getLastEnvelope()).containsEntry("livemode", PaymentGatewayTestSupport.livemode());
         assertThat(transport.getLastRequest().getBody()).doesNotContain("ORDER-1001");
-        assertThat(transport.getLastPlainBody()).containsEntry("orderNo", "ORDER-1001");
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getData().getTradeNo()).isEqualTo("pay_123");
     }
@@ -61,15 +61,15 @@ class PaymentGatewayClientTest {
 
         client.createCardPayment(request);
 
-        assertThat(transport.getLastPlainBody()).containsEntry("paymentMethod", "CARD");
+        assertThat(transport.getLastRequest().getBody()).doesNotContain("4111111111111111", "123");
         assertThat(card.toString()).doesNotContain("4111111111111111", "123");
     }
 
     /**
-     * 验证当前未标注加密注解的代付接口使用普通 JSON。
+     * 验证代付创建按新协议发送加密 data。
      */
     @Test
-    void createPayoutShouldUsePlainJsonForCurrentUnannotatedBackendEndpoint() {
+    void createPayoutShouldSendEncryptedData() {
         CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
         PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
         PayoutCreateRequest request = new PayoutCreateRequest();
@@ -84,8 +84,10 @@ class PaymentGatewayClientTest {
         PaymentGatewayResult<PayoutResponse> result = client.createPayout(request);
 
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/payout/trade/transfer");
-        assertThat(transport.getLastRequest().getBody()).contains("PO-1001");
-        assertThat(transport.getLastPlainBody()).containsEntry("orderNo", "PO-1001");
+        assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
+        assertThat(transport.getLastRequest().getBody()).contains("\"data\"");
+        assertThat(transport.getLastEnvelope()).containsEntry("livemode", PaymentGatewayTestSupport.livemode());
+        assertThat(transport.getLastRequest().getBody()).doesNotContain("PO-1001");
         assertThat(result.getData().getTradeNo()).isEqualTo("pay_123");
     }
 
@@ -100,6 +102,7 @@ class PaymentGatewayClientTest {
         client.retrievePayment("pay_123");
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
+        assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
         assertThat(transport.getLastRequest().getBody()).isNull();
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/payment/pay_123");
     }
@@ -117,14 +120,21 @@ class PaymentGatewayClientTest {
         assertThat(result.getData()).hasSize(1);
         assertThat(result.getData().get(0).getCurrency()).isEqualTo("USD");
         assertThat(transport.getLastRequest().getUri().getQuery()).isEqualTo("currency=USD");
-        assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Payment ");
-        assertThat(decodedPaymentAuthorization(transport)).isEqualTo(PaymentGatewayTestSupport.merchantJwtSecret());
+        assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
     }
 
-    private String decodedPaymentAuthorization(CapturingPaymentGatewayTransport transport) {
-        String authorization = transport.getLastRequest().getHeaders().get("Authorization");
-        String encodedToken = authorization.substring("Payment ".length());
-        return new String(Base64.getDecoder().decode(encodedToken), StandardCharsets.UTF_8);
+    /**
+     * 验证 SDK 会拒绝与本地配置不一致的响应环境。
+     */
+    @Test
+    void retrieveBalancesShouldRejectMismatchedResponseLivemode() {
+        CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
+        transport.setResponseLivemode(!PaymentGatewayTestSupport.livemode());
+        PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
+
+        assertThatThrownBy(() -> client.retrieveBalances("USD"))
+                .isInstanceOf(PaymentGatewayResponseException.class)
+                .hasMessageContaining("livemode is inconsistent");
     }
 
     private CheckoutPaymentRequest checkoutRequest() {

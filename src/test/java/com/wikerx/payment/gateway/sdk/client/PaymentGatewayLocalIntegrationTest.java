@@ -2,7 +2,9 @@ package com.wikerx.payment.gateway.sdk.client;
 
 import com.wikerx.payment.gateway.sdk.PaymentGatewayClient;
 import com.wikerx.payment.gateway.sdk.PaymentGatewayResult;
+import com.wikerx.payment.gateway.sdk.json.JsonSupport;
 import com.wikerx.payment.gateway.sdk.model.balance.BalanceResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -13,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test002 本地网关基础数据测试。
  */
+@Slf4j
 @EnabledIfSystemProperty(named = "payment.gateway.local-it", matches = "true")
 class PaymentGatewayLocalIntegrationTest {
 
@@ -26,9 +29,12 @@ class PaymentGatewayLocalIntegrationTest {
      */
     @Test
     void shouldRetrieveUsdBalanceFromLocalGateway() {
-        PaymentGatewayClient client = PaymentGatewayClient.create(LOCAL_CONFIG_FILE);
+        String configFile = System.getProperty("payment.gateway.local-config", LOCAL_CONFIG_FILE);
+        PaymentGatewayClient client = PaymentGatewayClient.create(configFile);
+        log.info("PaymentGatewayClient initialized successfully.");
 
         PaymentGatewayResult<List<BalanceResponse>> result = client.retrieveBalances("USD");
+        log.info("result:{}" , JsonSupport.toJson(result));
 
         assertThat(result.getCode()).isZero();
         assertThat(result.getData()).isNotEmpty();

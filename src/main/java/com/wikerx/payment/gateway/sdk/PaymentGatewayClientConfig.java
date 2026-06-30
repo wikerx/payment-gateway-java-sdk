@@ -41,6 +41,11 @@ public class PaymentGatewayClientConfig {
     private String merchantJwtSecret;
 
     /**
+     * 是否生产模式，false 表示沙盒，true 表示生产。
+     */
+    private Boolean livemode;
+
+    /**
      * 平台请求公钥，用于加密商户请求体 `data`。
      */
     @ToString.Exclude
@@ -89,6 +94,9 @@ public class PaymentGatewayClientConfig {
         requireText(baseUrl, "merchant.openapi.base-url");
         requireText(merchantId, "merchant.id");
         requireText(merchantJwtSecret, "merchant.jwt.secret");
+        if (livemode == null) {
+            throw new PaymentGatewayConfigException("merchant.livemode can not be null");
+        }
         requireText(platformPublicKey, "merchant.platform.public-key");
         requireText(merchantResponsePrivateKey, "merchant.response.private-key");
         if (jwtTtlSeconds == null || jwtTtlSeconds <= 0 || jwtTtlSeconds > PaymentGatewayConstants.JWT_TTL_SECONDS) {

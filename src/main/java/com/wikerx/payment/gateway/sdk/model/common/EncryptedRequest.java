@@ -16,6 +16,11 @@ import lombok.ToString;
 public class EncryptedRequest {
 
     /**
+     * 是否生产模式，false 为沙盒，true 为生产。
+     */
+    private Boolean livemode;
+
+    /**
      * compact 密文报文，格式为 protectedHeader.encryptedKey.iv.cipherText.tag。
      */
     @ToString.Exclude
