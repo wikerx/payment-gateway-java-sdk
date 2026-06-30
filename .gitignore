@@ -1,0 +1,16 @@
+target/
+.idea/
+*.iml
+.DS_Store
+__MACOSX/
+*.log
+logs/
+.env
+*.pem
+!src/test/resources/keys/*.pem
+*.key
+*.p12
+*.jks
+payment-gateway-sdk.properties
+src/test/resources/merchant-config-test002.properties
+src/test/resources/local-keys/
