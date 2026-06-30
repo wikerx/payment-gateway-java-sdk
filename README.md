@@ -26,37 +26,27 @@
 将配置文件放到商户服务端 classpath，例如 `merchant-config.properties`。
 
 ```properties
-payment.gateway.base-url=https://payment-gateway.example.com
-payment.gateway.merchant-no=<merchant-no>
+payment.gateway.base-url=http://localhost:58060
+payment.gateway.merchant-no=2606177036
 payment.gateway.livemode=false
 payment.gateway.api-private-key=<merchant-api-private-key>
-payment.gateway.platform-request-public-key-path=classpath:keys/platform-request-public-key.pem
-payment.gateway.merchant-response-private-key-path=classpath:keys/merchant-response-private-key.pem
+payment.gateway.platform-request-public-key-path=classpath:keys/2606177036_PLATFORM_REQUEST_PUBLIC_KEY.pem
+payment.gateway.merchant-response-private-key-path=classpath:keys/2606177036_MERCHANT_RESPONSE_PRIVATE_KEY.pem
 ```
 
 `livemode=false` 只请求沙盒 / 测试数据源，`livemode=true` 只请求生产数据源。SDK 不根据 API 私钥是否包含 `_test_` 推断环境。
 
-也兼容旧配置名和文本密钥，文件配置优先于文本配置：
+密钥也可以直接使用文本配置，文件配置优先于文本配置：
 
 ```properties
-merchant.openapi.base-url=https://payment-gateway.example.com
-merchant.id=<merchant-no>
-merchant.livemode=false
-merchant.api.private-key=<merchant-api-private-key>
-merchant.platform.public-key=<x509-public-key-base64-or-pem>
-merchant.response.private-key=<pkcs8-private-key-base64-or-pem>
+payment.gateway.platform-request-public-key=<x509-public-key-base64-or-pem>
+payment.gateway.merchant-response-private-key=<pkcs8-private-key-base64-or-pem>
 ```
 
 ## 创建客户端
 
 ```java
 PaymentGatewayClient client = PaymentGatewayClient.create();
-```
-
-多商户或测试场景可指定 classpath 配置名：
-
-```java
-PaymentGatewayClient client = PaymentGatewayClient.create("merchant-config-us.properties");
 ```
 
 ## 收银台支付
@@ -148,7 +138,7 @@ PaymentGatewayResult<CustomerResponse> result = client.createCustomer(request);
 - 已集成接口统一按后端 `@VerificationAndProcessing` 走 Bearer JWT。JWT 使用商户 API 私钥做 HS256 签名，并包含 `merchantId`、`livemode`、`jti`、`iat`、`exp`。
 - POST 请求体格式为 `{"livemode":false,"data":"compact密文"}`；GET 请求无 body，但 JWT 中仍必须携带 `livemode`。
 - 响应外层包含 `livemode`。SDK 会校验响应 `livemode` 与本地配置一致，不一致时抛出 `PaymentGatewayResponseException`。
-- SDK 当前封装了代收、退款、代付、余额、客户接口，并提供 `PaymentGatewayMerchantCasesTest` 作为商户可直接参考的完整 case。代收、退款、代付、余额走当前注解加密协议；客户接口按当前网关模块边界继续走历史 Payment 鉴权。
+- SDK 当前封装了代收、退款、代付、余额、客户接口，并按接口提供独立 case，例如 `FundAccountsBalanceInquiryTest`。代收、退款、代付、余额走当前注解加密协议；客户接口按当前网关模块边界继续走历史 Payment 鉴权。
 - compact payload header 固定：`typ=PAYMENT-PAYLOAD`、`alg=RSA-OAEP-256`、`enc=A256GCM`，不输出 `kid`。
 
 ## 异常

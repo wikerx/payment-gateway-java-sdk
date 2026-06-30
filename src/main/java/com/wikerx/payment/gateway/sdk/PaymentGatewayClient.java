@@ -53,8 +53,10 @@ import java.util.UUID;
  * @version : v1.0.0
  * @classname : PaymentGatewayClient
  * @date : 2026-06-30 10:28
- * @email : <git账户邮箱>
+ * @email : scott_x@163.com
  * @description : 商户支付网关 Java SDK 客户端，负责请求签名、请求加密、响应解密、HTTP 调用和基础参数校验。
+ *                本类不负责商户业务幂等落库、资金状态流转或渠道回调处理；支付、退款、代付、余额和客户等商户 OpenAPI 请求会按服务端最新协议使用 Bearer JWT 与 JWE data。
+ *                配置中包含 API 私钥、平台请求公钥和商户响应私钥，属于敏感材料，日志只能输出脱敏商户号、请求 ID 和必要摘要。
  * @status : create
  */
 @Slf4j
@@ -115,16 +117,6 @@ public class PaymentGatewayClient {
      */
     public static PaymentGatewayClient create() {
         return new PaymentGatewayClient(MerchantConfigLoader.load());
-    }
-
-    /**
-     * 从指定 classpath 配置文件创建客户端。
-     *
-     * @param configFileName 配置文件名
-     * @return SDK 客户端
-     */
-    public static PaymentGatewayClient create(String configFileName) {
-        return new PaymentGatewayClient(MerchantConfigLoader.load(configFileName));
     }
 
     /**
@@ -288,6 +280,7 @@ public class PaymentGatewayClient {
      */
     public PaymentGatewayResult<List<BalanceResponse>> retrieveBalances(String currency) {
         String path = PaymentGatewayConstants.BALANCE_RETRIEVE_PATH + "?currency=" + encodeQuery(requireText(currency, "currency"));
+        log.warn("retrieveBalances: {}", path);
         return getListSecured(path, BalanceResponse.class, "balance-" + UUID.randomUUID());
     }
 
@@ -300,7 +293,7 @@ public class PaymentGatewayClient {
     public PaymentGatewayResult<CustomerResponse> createCustomer(CustomerCreateRequest request) {
         validateCustomerCreateRequest(request);
         String jti = "customer-" + StringUtils.defaultIfBlank(request.getEmail(), UUID.randomUUID().toString());
-        return postJson(PaymentGatewayConstants.CUSTOMER_CREATE_PATH, request, CustomerResponse.class, jti);
+        return postEncrypted(PaymentGatewayConstants.CUSTOMER_CREATE_PATH, request, CustomerResponse.class, jti);
     }
 
     /**
@@ -310,7 +303,7 @@ public class PaymentGatewayClient {
      * @return 客户响应
      */
     public PaymentGatewayResult<CustomerResponse> retrieveCustomer(String customerId) {
-        return get(String.format(PaymentGatewayConstants.CUSTOMER_RETRIEVE_PATH, encodePath(requireText(customerId, "customerId"))),
+        return getSecured(String.format(PaymentGatewayConstants.CUSTOMER_RETRIEVE_PATH, encodePath(requireText(customerId, "customerId"))),
                 CustomerResponse.class,
                 "query-" + UUID.randomUUID());
     }
@@ -432,6 +425,7 @@ public class PaymentGatewayClient {
                 path,
                 PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
                 requestId);
+        log.info("requestBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(body));
         try {
             SdkHttpResponse response = httpTransport.execute(SdkHttpRequest.builder()
                     .method(method)
@@ -459,6 +453,7 @@ public class PaymentGatewayClient {
                     requestId,
                     response.getStatusCode(),
                     System.currentTimeMillis() - startMillis);
+            log.info("responseBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(response.getBody()));
             return JsonSupport.fromJson(response.getBody(), new TypeReference<PaymentGatewayResult<JsonNode>>() {
             });
         } catch (RuntimeException exception) {
@@ -530,6 +525,7 @@ public class PaymentGatewayClient {
         if (withBody) {
             headers.put(PaymentGatewayConstants.HEADER_CONTENT_TYPE, PaymentGatewayConstants.CONTENT_TYPE);
         }
+        log.info("headers: {}", JsonSupport.toJson(PaymentGatewayLogSanitizer.sanitizeHeaders(headers)));
         return headers;
     }
 

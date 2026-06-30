@@ -4,10 +4,18 @@ import com.wikerx.payment.gateway.sdk.PaymentGatewayClientConfig;
 import com.wikerx.payment.gateway.sdk.crypto.RsaKeyUtils;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Paths;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : MerchantConfigLoaderTest
+ * @date : 2026-06-30 10:28
+ * @email : scott_x@163.com
+ * @description : 商户配置加载测试，负责验证 SDK 只读取 merchant-config.properties，并能解析 2606177036 沙盒商户的文本密钥和 PEM 文件。
+ *                本测试不输出 API 私钥或商户响应私钥明文，不新增数据库数据，也不发起真实网关请求。
+ * @status : modify
+ */
 class MerchantConfigLoaderTest {
 
     /**
@@ -15,29 +23,16 @@ class MerchantConfigLoaderTest {
      */
     @Test
     void shouldLoadTextKeyConfig() {
-        PaymentGatewayClientConfig config = MerchantConfigLoader.load("merchant-config.properties");
+        PaymentGatewayClientConfig config = MerchantConfigLoader.load();
 
-        assertThat(config.getMerchantId()).isEqualTo("200046");
+        assertThat(config.getMerchantId()).isEqualTo("2606177036");
         assertThat(config.getMerchantJwtSecret()).hasSizeGreaterThanOrEqualTo(32);
         assertThat(config.getPlatformPublicKey()).isNotBlank();
         assertThat(config.getMerchantResponsePrivateKey()).isNotBlank();
-        assertThat(config.getBaseUrl()).isEqualTo("https://payment-gateway.example.com");
+        assertThat(config.getBaseUrl()).isEqualTo("http://localhost:58060");
         assertThat(config.getLivemode()).isFalse();
-        assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
+        assertThat(config.getConnectTimeoutMs()).isEqualTo(3000);
         assertThat(config.getReadTimeoutMs()).isEqualTo(10000);
-    }
-
-    /**
-     * 验证配置文件可从文件系统路径加载。
-     */
-    @Test
-    void shouldLoadConfigFromFileSystemPath() {
-        String configPath = Paths.get("src/test/resources/merchant-config.properties").toAbsolutePath().toString();
-
-        PaymentGatewayClientConfig config = MerchantConfigLoader.load(configPath);
-
-        assertThat(config.getMerchantId()).isEqualTo("200046");
-        assertThat(config.getLivemode()).isFalse();
     }
 
     /**
@@ -45,10 +40,10 @@ class MerchantConfigLoaderTest {
      */
     @Test
     void shouldNormalizeExportedPemWithMetadata() {
-        PaymentGatewayClientConfig config = MerchantConfigLoader.load("merchant-config.properties");
-        String platformPublicPem = "merNo=Test002\nkeyVersion=v2\n\n"
+        PaymentGatewayClientConfig config = MerchantConfigLoader.load();
+        String platformPublicPem = "merNo=2606177036\nkeyVersion=v2\n\n"
                 + RsaKeyUtils.toPublicKeyPem(config.getPlatformPublicKey());
-        String responsePrivatePem = "merNo=Test002\nkeyVersion=v2\n\n"
+        String responsePrivatePem = "merNo=2606177036\nkeyVersion=v2\n\n"
                 + RsaKeyUtils.toPrivateKeyPem(config.getMerchantResponsePrivateKey());
 
         assertThat(KeyFileLoader.normalizePem(platformPublicPem)).isEqualTo(config.getPlatformPublicKey());

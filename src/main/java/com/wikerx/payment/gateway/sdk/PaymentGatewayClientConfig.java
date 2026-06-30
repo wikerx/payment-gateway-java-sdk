@@ -12,10 +12,15 @@ import java.net.URI;
 import java.time.Clock;
 
 /**
- * SDK 客户端运行配置。
- * <p>
- * 普通商户不需要手动构造本对象，优先通过 `PaymentGatewayClient.create()` 自动读取
- * `merchant-config.properties`。该类保留 builder 是为了测试、多商户和高级集成场景。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : PaymentGatewayClientConfig
+ * @date : 2026-06-30 10:28
+ * @email : scott_x@163.com
+ * @description : SDK 客户端运行配置，负责承载商户号、livemode、JWT API 密钥、平台请求公钥、商户响应私钥和 HTTP 基础参数。
+ *                本类只做配置表达和本地完整性校验，不负责发起 HTTP 请求、资金状态处理或外部渠道调用。
+ *                API 私钥和商户响应私钥属于敏感数据，必须通过 Lombok toString 排除，避免进入测试日志、普通日志或异常消息。
+ * @status : modify
  */
 @Data
 @Builder
@@ -91,14 +96,14 @@ public class PaymentGatewayClientConfig {
      * 校验配置完整性，避免缺少商户号、密钥或基础地址时发出错误请求。
      */
     public void validate() {
-        requireText(baseUrl, "merchant.openapi.base-url");
-        requireText(merchantId, "merchant.id");
-        requireText(merchantJwtSecret, "merchant.jwt.secret");
+        requireText(baseUrl, "payment.gateway.base-url");
+        requireText(merchantId, "payment.gateway.merchant-no");
+        requireText(merchantJwtSecret, "payment.gateway.api-private-key");
         if (livemode == null) {
-            throw new PaymentGatewayConfigException("merchant.livemode can not be null");
+            throw new PaymentGatewayConfigException("payment.gateway.livemode can not be null");
         }
-        requireText(platformPublicKey, "merchant.platform.public-key");
-        requireText(merchantResponsePrivateKey, "merchant.response.private-key");
+        requireText(platformPublicKey, "payment.gateway.platform-request-public-key");
+        requireText(merchantResponsePrivateKey, "payment.gateway.merchant-response-private-key");
         if (jwtTtlSeconds == null || jwtTtlSeconds <= 0 || jwtTtlSeconds > PaymentGatewayConstants.JWT_TTL_SECONDS) {
             throw new PaymentGatewayConfigException("jwtTtlSeconds must be between 1 and " + PaymentGatewayConstants.JWT_TTL_SECONDS);
         }
@@ -138,7 +143,7 @@ public class PaymentGatewayClientConfig {
     }
 
     private static String normalizeBaseUrl(String value) {
-        String text = requireText(value, "merchant.openapi.base-url");
+        String text = requireText(value, "payment.gateway.base-url");
         return text.endsWith("/") ? text.substring(0, text.length() - 1) : text;
     }
 
