@@ -31,7 +31,7 @@ class PayoutTradeTransferRetrieveTest {
      * 是否允许为空：否。
      * 用途：参与检索代付交易接口的路径拼接和 JWT jti 生成。
      */
-    private static final String TRADE_NO = "payout_202606291921574764695";
+    private static final String TRADE_NO = "payout_202606301356282725102";
 
     /**
      * 验证检索代付交易接口使用 GET、Bearer JWT 且不发送请求体。
@@ -52,7 +52,7 @@ class PayoutTradeTransferRetrieveTest {
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
         assertThat(transport.getLastRequest().getUri().getPath())
-                .isEqualTo("/pay-api/payout/trade/transfer/payout_202606291921574764695");
+                .isEqualTo("/pay-api/payout/trade/transfer/" + TRADE_NO);
         assertThat(transport.getLastRequest().getBody()).isNull();
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
         assertThat(result.isSuccess()).isTrue();

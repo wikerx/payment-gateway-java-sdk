@@ -19,7 +19,7 @@ import java.time.Clock;
  * @email : scott_x@163.com
  * @description : SDK 客户端运行配置，负责承载商户号、livemode、JWT API 密钥、平台请求公钥、商户响应私钥和 HTTP 基础参数。
  *                本类只做配置表达和本地完整性校验，不负责发起 HTTP 请求、资金状态处理或外部渠道调用。
- *                API 私钥和商户响应私钥属于敏感数据，必须通过 Lombok toString 排除，避免进入测试日志、普通日志或异常消息。
+ *                API 私钥和商户响应私钥属于敏感数据，必须通过 Lombok toString 排除；原始 HTTP 日志只用于沙盒联调核验。
  * @status : modify
  */
 @Data
@@ -87,6 +87,17 @@ public class PaymentGatewayClientConfig {
     private String defaultVersion = PaymentGatewayConstants.DEFAULT_VERSION;
 
     /**
+     * 是否打印原始 HTTP 调试日志。
+     *
+     * 敏感字段：是。
+     * 是否允许为空：允许为空，空值按 false 处理。
+     * 用途：沙盒联调时输出完整请求地址、请求头、请求报文和响应报文，便于商户核验加密后的实际传输数据。
+     * 限制：生产环境不建议开启；开启后 Authorization JWT 和加密 data 会进入应用日志。
+     */
+    @Builder.Default
+    private Boolean rawHttpLogEnabled = Boolean.FALSE;
+
+    /**
      * SDK 时间源，主要用于测试 JWT 签发时间；商户一般无需设置。
      */
     @Builder.Default
@@ -115,6 +126,9 @@ public class PaymentGatewayClientConfig {
         }
         if (clock == null) {
             throw new PaymentGatewayConfigException("clock can not be null");
+        }
+        if (rawHttpLogEnabled == null) {
+            rawHttpLogEnabled = Boolean.FALSE;
         }
         defaultVersion = requireText(defaultVersion, "defaultVersion");
         baseUrl = normalizeBaseUrl(baseUrl);

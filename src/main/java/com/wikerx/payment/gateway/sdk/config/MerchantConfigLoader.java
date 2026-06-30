@@ -47,6 +47,7 @@ public final class MerchantConfigLoader {
                 .connectTimeoutMs(PaymentGatewayConstants.HTTP_CONNECT_TIMEOUT_MS)
                 .readTimeoutMs(PaymentGatewayConstants.HTTP_READ_TIMEOUT_MS)
                 .defaultVersion(PaymentGatewayConstants.DEFAULT_VERSION)
+                .rawHttpLogEnabled(optionalBoolean(properties, "payment.gateway.debug-raw-log-enabled", Boolean.FALSE))
                 .build();
     }
 
@@ -72,6 +73,18 @@ public final class MerchantConfigLoader {
 
     private static Boolean requiredBoolean(Properties properties, String key) {
         String value = required(properties, key);
+        return parseBoolean(value, key);
+    }
+
+    private static Boolean optionalBoolean(Properties properties, String key, Boolean defaultValue) {
+        String value = properties.getProperty(key);
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return parseBoolean(value, key);
+    }
+
+    private static Boolean parseBoolean(String value, String key) {
         if ("true".equalsIgnoreCase(value)) {
             return Boolean.TRUE;
         }

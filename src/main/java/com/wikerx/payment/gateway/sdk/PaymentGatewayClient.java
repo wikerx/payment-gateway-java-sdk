@@ -322,7 +322,12 @@ public class PaymentGatewayClient {
         requireObject(request, "request");
         String requestJson = JsonSupport.toJson(request);
         String encryptedData = payloadCrypto.encrypt(requestJson, platformPublicKey);
-        return execute("POST", path, JsonSupport.toJson(new EncryptedRequest(config.getLivemode(), encryptedData)), responseType, jwtId,
+        return execute("POST",
+                path,
+                JsonSupport.toJson(new EncryptedRequest(config.getLivemode(), encryptedData)),
+                requestJson,
+                responseType,
+                jwtId,
                 AuthorizationMode.BEARER_JWT);
     }
 
@@ -409,7 +414,17 @@ public class PaymentGatewayClient {
                                                 Class<T> responseType,
                                                 String jwtId,
                                                 AuthorizationMode authorizationMode) {
-        PaymentGatewayResult<JsonNode> rawResult = executeRaw(method, path, body, jwtId, authorizationMode);
+        return execute(method, path, body, null, responseType, jwtId, authorizationMode);
+    }
+
+    private <T> PaymentGatewayResult<T> execute(String method,
+                                                String path,
+                                                String body,
+                                                String plainBody,
+                                                Class<T> responseType,
+                                                String jwtId,
+                                                AuthorizationMode authorizationMode) {
+        PaymentGatewayResult<JsonNode> rawResult = executeRaw(method, path, body, plainBody, jwtId, authorizationMode);
         return convertResult(rawResult, responseType);
     }
 
@@ -418,19 +433,32 @@ public class PaymentGatewayClient {
                                                       String body,
                                                       String jwtId,
                                                       AuthorizationMode authorizationMode) {
+        return executeRaw(method, path, body, null, jwtId, authorizationMode);
+    }
+
+    private PaymentGatewayResult<JsonNode> executeRaw(String method,
+                                                      String path,
+                                                      String body,
+                                                      String plainBody,
+                                                      String jwtId,
+                                                      AuthorizationMode authorizationMode) {
         String requestId = UUID.randomUUID().toString();
         long startMillis = System.currentTimeMillis();
+        URI requestUri = resolveUri(path);
+        Map<String, String> requestHeaders = headers(jwtId, requestId, body != null, authorizationMode);
         log.info("event=payment_gateway_sdk_request_start method={} path={} merchantId={} requestId={}",
                 method,
                 path,
                 PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
                 requestId);
         log.info("requestBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(body));
+        logRawPlainRequest(method, requestUri, plainBody, requestId);
+        logRawRequest(method, requestUri, requestHeaders, body, requestId);
         try {
             SdkHttpResponse response = httpTransport.execute(SdkHttpRequest.builder()
                     .method(method)
-                    .uri(resolveUri(path))
-                    .headers(headers(jwtId, requestId, body != null, authorizationMode))
+                    .uri(requestUri)
+                    .headers(requestHeaders)
                     .body(body)
                     .connectTimeoutMs(config.getConnectTimeoutMs())
                     .readTimeoutMs(config.getReadTimeoutMs())
@@ -454,6 +482,7 @@ public class PaymentGatewayClient {
                     response.getStatusCode(),
                     System.currentTimeMillis() - startMillis);
             log.info("responseBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(response.getBody()));
+            logRawResponse(response, requestId);
             return JsonSupport.fromJson(response.getBody(), new TypeReference<PaymentGatewayResult<JsonNode>>() {
             });
         } catch (RuntimeException exception) {
@@ -468,6 +497,43 @@ public class PaymentGatewayClient {
         }
     }
 
+    private void logRawRequest(String method, URI requestUri, Map<String, String> requestHeaders, String body, String requestId) {
+        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
+            return;
+        }
+        log.info("event=payment_gateway_sdk_raw_request requestId={} method={} url={}",
+                requestId, method, requestUri);
+        log.info("event=payment_gateway_sdk_raw_request_headers requestId={} headers={}",
+                requestId, JsonSupport.toJson(requestHeaders));
+        log.info("event=payment_gateway_sdk_raw_request_body requestId={} body={}", requestId, body);
+    }
+
+    private void logRawPlainRequest(String method, URI requestUri, String plainBody, String requestId) {
+        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
+            return;
+        }
+        log.info("event=payment_gateway_sdk_raw_plain_request_body requestId={} method={} url={} body={}",
+                requestId, method, requestUri, plainBody);
+    }
+
+    private void logRawResponse(SdkHttpResponse response, String requestId) {
+        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
+            return;
+        }
+        log.info("event=payment_gateway_sdk_raw_response requestId={} statusCode={} headers={} body={}",
+                requestId,
+                response.getStatusCode(),
+                JsonSupport.toJson(response.getHeaders()),
+                response.getBody());
+    }
+
+    private void logRawPlainResponseData(String dataJson) {
+        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
+            return;
+        }
+        log.info("event=payment_gateway_sdk_raw_plain_response_data data={}", dataJson);
+    }
+
     private <T> PaymentGatewayResult<T> convertResult(PaymentGatewayResult<JsonNode> rawResult, Class<T> responseType) {
         validateResponseLivemode(rawResult.getLivemode());
         PaymentGatewayResult<T> result = new PaymentGatewayResult<T>();
@@ -476,6 +542,7 @@ public class PaymentGatewayClient {
         result.setLivemode(rawResult.getLivemode());
         if (rawResult.getData() != null && !rawResult.getData().isNull()) {
             String plainJson = resolveDataJson(rawResult.getData());
+            logRawPlainResponseData(plainJson);
             result.setData(JsonSupport.fromJson(plainJson, responseType));
         }
         return result;
@@ -489,6 +556,7 @@ public class PaymentGatewayClient {
         result.setLivemode(rawResult.getLivemode());
         if (rawResult.getData() != null && !rawResult.getData().isNull()) {
             String plainJson = resolveDataJson(rawResult.getData());
+            logRawPlainResponseData(plainJson);
             JsonNode plainNode = JsonSupport.fromJson(plainJson, JsonNode.class);
             if (plainNode.isArray()) {
                 result.setData(JsonSupport.fromJsonList(plainJson, elementType));
