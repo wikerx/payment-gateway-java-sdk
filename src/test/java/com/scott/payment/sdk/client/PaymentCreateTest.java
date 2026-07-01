@@ -7,6 +7,7 @@ import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
 import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -33,12 +34,12 @@ class PaymentCreateTest {
         CapturingOpenApiTransport transport = new CapturingOpenApiTransport();
         OpenApiClient client = new OpenApiClient(OpenApiTestSupport.clientConfig(), transport);
         CheckoutPaymentRequest request = new CheckoutPaymentRequest();
-        request.setOrderNo("CASE-PAY-1001");
+        String merchantOrderNo = OrderNoGenerator.generate("PAY");
+        request.setOrderNo(merchantOrderNo);
         request.setCurrency("USD");
         request.setAmount(OpenApiTestSupport.amount("12.34"));
         request.setReturnUrl("https://merchant.example.com/return");
         request.setNotifyUrl("https://merchant.example.com/notify");
-        request.setPaymentMethod("CHECKOUT");
 
         log.info("用例开始: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "PaymentCreateTest",
@@ -58,7 +59,7 @@ class PaymentCreateTest {
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/payment");
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
         assertThat(transport.getLastEnvelope().getLivemode()).isEqualTo(false);
-        assertThat(transport.getLastRequest().getBody()).doesNotContain("CASE-PAY-1001");
+        assertThat(transport.getLastRequest().getBody()).doesNotContain(merchantOrderNo);
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getData().getTradeNo()).isNotBlank();
     }

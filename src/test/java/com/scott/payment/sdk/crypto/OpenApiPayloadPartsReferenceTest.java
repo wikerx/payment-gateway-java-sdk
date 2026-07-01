@@ -5,8 +5,10 @@ import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
 import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.payment.PaymentCreateRequest;
 import com.scott.payment.sdk.testkit.OpenApiTestSupport;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +56,7 @@ class OpenApiPayloadPartsReferenceTest {
 
         log.info("商户参考用例-请求原始明文报文: {}", JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeObject(plainRequest)));
         log.info("商户参考用例-请求密文参数: {}", JsonSupport.toLogJson(encryptedRequest));
-        log.info("商户参考用例-请求参数拆分: {}", JsonSupport.toLogJson(splitParts));
+        log.debug("商户参考用例-请求参数拆分: {}", JsonSupport.toLogJson(splitParts));
 
         assertThat(splitParts.getHeader()).contains("\"typ\":\"PAYMENT-PAYLOAD\"")
                 .contains("\"alg\":\"RSA-OAEP-256\"")
@@ -74,12 +76,12 @@ class OpenApiPayloadPartsReferenceTest {
         card.put("cvc", "123");
 
         PaymentCreateRequest request = new PaymentCreateRequest();
-        request.setOrderNo("ORDER-PAYLOAD-PARTS");
+        request.setOrderNo(OrderNoGenerator.generate("PAY"));
         request.setCurrency("USD");
         request.setAmount(OpenApiTestSupport.amount("12.34"));
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");
-        request.setPaymentMethod("CARD");
+        request.setPaymentMethod(PaymentMethod.CARD);
         request.setPaymentMethodData(card);
         return request;
     }

@@ -70,7 +70,7 @@ class OpenApiClientEncryptedPayloadLogTest {
 
         assertThat(json).contains("\"body\":{\"livemode\":false");
         assertThat(json).doesNotContain("\"body\":\"{");
-        assertThat(json).contains("Bearer abcdefghij******uvwxyz");
+        assertThat(json).contains("Bearer abcdefghij***uvwxyz");
     }
 
     /**

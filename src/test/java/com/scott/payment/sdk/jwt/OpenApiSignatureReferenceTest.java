@@ -9,7 +9,9 @@ import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
 import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.payment.PaymentCreateRequest;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
@@ -126,7 +128,7 @@ class OpenApiSignatureReferenceTest {
         log.info("签名算法示例-POST请求头: {}", JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeHeaders(headers)));
         log.info("签名算法示例-POST请求原始明文报文: {}", JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeObject(plainRequest)));
         log.info("签名算法示例-POST请求密文参数: {}", JsonSupport.toLogJson(encryptedRequest));
-        log.info("签名算法示例-POST请求参数拆分: {}", JsonSupport.toLogJson(payloadParts));
+        log.debug("签名算法示例-POST请求参数拆分: {}", JsonSupport.toLogJson(payloadParts));
 
         assertThat(headers).containsKeys(
                 OpenApiConstants.HEADER_AUTHORIZATION,
@@ -199,12 +201,12 @@ class OpenApiSignatureReferenceTest {
         card.put("cvc", "123");
 
         PaymentCreateRequest request = new PaymentCreateRequest();
-        request.setOrderNo("ORDER-APIFOX-SIGNATURE");
+        request.setOrderNo(OrderNoGenerator.generate("PAY"));
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");
-        request.setPaymentMethod("CARD");
+        request.setPaymentMethod(PaymentMethod.CARD);
         request.setPaymentMethodData(card);
         return request;
     }

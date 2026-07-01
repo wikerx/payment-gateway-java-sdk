@@ -5,6 +5,7 @@ import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.exception.OpenApiResponseException;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.CardPaymentMethodData;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
 import com.scott.payment.sdk.model.payment.CheckoutPaymentRequest;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
@@ -86,7 +87,7 @@ class OpenApiClientTest {
         request.setOrderNo("PO-1001");
         request.setCurrency("USD");
         request.setAmount(OpenApiTestSupport.amount("9.99"));
-        request.setPaymentMethod("PAY_PAL");
+        request.setPaymentMethod(PaymentMethod.PAY_PAL);
         Map<String, Object> methodData = new HashMap<String, Object>();
         methodData.put("email", "receiver@example.com");
         request.setPaymentMethodData(methodData);

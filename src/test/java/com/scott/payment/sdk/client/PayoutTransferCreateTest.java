@@ -3,11 +3,13 @@ package com.scott.payment.sdk.client;
 import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.common.CustomerInfo;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.payout.PayoutCreateRequest;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
 import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
 import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +61,7 @@ class PayoutTransferCreateTest {
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");
         assertThat(requestBody).contains("\"livemode\":false", "\"data\"");
         assertThat(requestBody)
-                .doesNotContain("62497715054059",
+                .doesNotContain(request.getOrderNo(),
                         "4242424242424242",
                         "lily_brown_1782457030419@test.com",
                         "\"cvc\"",
@@ -71,7 +73,7 @@ class PayoutTransferCreateTest {
 
     private PayoutCreateRequest payoutCreateRequest() {
         PayoutCreateRequest request = new PayoutCreateRequest();
-        request.setOrderNo("62497715054059");
+        request.setOrderNo(OrderNoGenerator.generate("PO"));
         request.setCurrency("USD");
         request.setAmount(OpenApiTestSupport.amount("3.11"));
         request.setNotifyUrl("");
@@ -79,7 +81,7 @@ class PayoutTransferCreateTest {
         request.setWebsite("https://manage.forgottenthrone.com/");
         request.setCustomer(customerInfo());
         request.setMetadata("");
-        request.setPaymentMethod("CARD");
+        request.setPaymentMethod(PaymentMethod.CARD);
         request.setPaymentMethodData(cardPaymentMethodData());
         return request;
     }

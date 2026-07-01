@@ -214,6 +214,9 @@ protected header 原文固定为：
 ### 5.1 准备业务请求参数
 
 ```java
+import com.scott.payment.sdk.util.OrderNoGenerator;
+import com.scott.payment.sdk.model.common.PaymentMethod;
+
 Map<String, Object> card = new LinkedHashMap<String, Object>();
 card.put("number", "4242424242424242");
 card.put("expMonth", "06");
@@ -221,12 +224,12 @@ card.put("expYear", "2026");
 card.put("cvc", "123");
 
 PaymentCreateRequest request = new PaymentCreateRequest();
-request.setOrderNo("ORDER-APIFOX-SIGNATURE");
+request.setOrderNo(OrderNoGenerator.generate("PAY"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("12.34"));
 request.setClientIp("47.125.221.223");
 request.setWebsite("https://manage.forgottenthrone.com/");
-request.setPaymentMethod("CARD");
+request.setPaymentMethod(PaymentMethod.CARD);
 request.setPaymentMethodData(card);
 ```
 
@@ -282,7 +285,7 @@ log.info("签名算法示例-POST请求原始明文报文: {}",
         JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeObject(request)));
 log.info("签名算法示例-POST请求密文参数: {}",
         JsonSupport.toLogJson(encryptedRequest));
-log.info("签名算法示例-POST请求参数拆分: {}",
+log.debug("签名算法示例-POST请求参数拆分: {}",
         JsonSupport.toLogJson(payloadParts));
 ```
 

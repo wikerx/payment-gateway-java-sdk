@@ -20,6 +20,7 @@ import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedResponse;
 import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
@@ -195,7 +196,7 @@ public class OpenApiClient {
      */
     public OpenApiResult<PaymentResponse> createCardPayment(CardPaymentRequest request) {
         if (request != null && StringUtils.isBlank(request.getPaymentMethod())) {
-            request.setPaymentMethod("CARD");
+            request.setPaymentMethod(PaymentMethod.CARD);
         }
         return createPayment(request);
     }
@@ -572,6 +573,7 @@ public class OpenApiClient {
         if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
             return;
         }
+        log.info("响应原始密文参数：{}" , JsonSupport.toJson(encryptedResponse));
         logJson("响应原始密文参数", logFields(
                 "statusCode", response.getStatusCode(),
                 "headers", OpenApiLogSanitizer.sanitizeHeaders(response.getHeaders()),

@@ -31,6 +31,7 @@ import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.CardPaymentMethodData;
 import com.scott.payment.sdk.model.common.CustomerInfo;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
@@ -42,6 +43,7 @@ import com.scott.payment.sdk.model.payout.PayoutCreateRequest;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
 import com.scott.payment.sdk.model.refund.RefundCreateRequest;
 import com.scott.payment.sdk.model.refund.RefundResponse;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 ```
 
 ## 配置
@@ -80,16 +82,31 @@ payment.gateway.merchant-response-private-key=<pkcs8-private-key-base64-or-pem>
 OpenApiClient client = OpenApiClient.create();
 ```
 
+## 支付方式枚举
+
+SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使用枚举，避免手写字符串。
+
+| 枚举 | 网关取值 | 说明 |
+|---|---|---|
+| `PaymentMethod.CARD` | `CARD` | 信用卡 |
+| `PaymentMethod.PAY_PAL` | `PAY_PAL` | PayPal |
+| `PaymentMethod.CASHAPP` | `CASHAPP` | Cash App |
+| `PaymentMethod.ACH_DEBIT` | `ACH_DEBIT` | ACH 直接借记 |
+| `PaymentMethod.UPI` | `UPI` | 印度 UPI |
+
+`PaymentCreateRequest` 和 `PayoutCreateRequest` 同时保留 `setPaymentMethod(String)`，用于兼容历史代码或网关新增但 SDK 暂未发布的新支付方式。
+
 ## 收银台支付
 
 ```java
+import com.scott.payment.sdk.util.OrderNoGenerator;
+
 CheckoutPaymentRequest request = new CheckoutPaymentRequest();
-request.setOrderNo("ORDER-1001");
+request.setOrderNo(OrderNoGenerator.generate("PAY"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("14.99"));
 request.setReturnUrl("https://merchant.example.com/return");
 request.setNotifyUrl("https://merchant.example.com/notify");
-request.setPaymentMethod("CHECKOUT");
 
 OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ```
@@ -99,8 +116,10 @@ OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ## 信用卡直连
 
 ```java
+import com.scott.payment.sdk.util.OrderNoGenerator;
+
 CardPaymentRequest request = new CardPaymentRequest();
-request.setOrderNo("ORDER-CARD-1001");
+request.setOrderNo(OrderNoGenerator.generate("CARD"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("20.00"));
 request.setWebsite("https://merchant.example.com");
@@ -120,11 +139,14 @@ OpenApiResult<PaymentResponse> result = client.createCardPayment(request);
 ## 代付
 
 ```java
+import com.scott.payment.sdk.util.OrderNoGenerator;
+import com.scott.payment.sdk.model.common.PaymentMethod;
+
 PayoutCreateRequest request = new PayoutCreateRequest();
-request.setOrderNo("PO-1001");
+request.setOrderNo(OrderNoGenerator.generate("PO"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("9.99"));
-request.setPaymentMethod("PAY_PAL");
+request.setPaymentMethod(PaymentMethod.PAY_PAL);
 request.setPaymentMethodData(Collections.singletonMap("email", "receiver@example.com"));
 
 OpenApiResult<PayoutResponse> result = client.createPayout(request);

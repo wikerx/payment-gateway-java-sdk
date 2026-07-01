@@ -24,7 +24,7 @@ public final class OpenApiLogSanitizer {
     /**
      * 日志敏感字段统一替换值。
      */
-    private static final String MASK = "******";
+    private static final String MASK = "***";
 
     private OpenApiLogSanitizer() {
     }

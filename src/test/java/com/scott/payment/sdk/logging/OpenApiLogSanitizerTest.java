@@ -26,7 +26,7 @@ class OpenApiLogSanitizerTest {
     void shouldMaskSensitiveNumbers() {
         assertThat(OpenApiLogSanitizer.maskMerchantId("200046999")).isEqualTo("200046999");
         assertThat(OpenApiLogSanitizer.maskCardNo("4111111111111111")).isEqualTo("411111******1111");
-        assertThat(OpenApiLogSanitizer.maskAccountNo("123456789")).isEqualTo("******6789");
+        assertThat(OpenApiLogSanitizer.maskAccountNo("123456789")).isEqualTo("***6789");
     }
 
     /**
@@ -40,7 +40,7 @@ class OpenApiLogSanitizerTest {
 
         Map<String, String> sanitized = OpenApiLogSanitizer.sanitizeHeaders(headers);
 
-        assertThat(sanitized.get("Authorization")).isEqualTo("Bearer abcdefghij******uvwxyz");
+        assertThat(sanitized.get("Authorization")).isEqualTo("Bearer abcdefghij***uvwxyz");
         assertThat(sanitized.get("Accept")).isEqualTo("application/json");
     }
 
