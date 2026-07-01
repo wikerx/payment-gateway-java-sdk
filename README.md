@@ -21,6 +21,8 @@
 </dependency>
 ```
 
+Java import 包名为 `com.scott.payment.sdk`。Maven 发布坐标暂保留 `com.wikerx.payment:payment-gateway-java-sdk`，避免影响现有依赖引入方式。
+
 ## 配置
 
 将配置文件放到商户服务端 classpath，例如 `merchant-config.properties`。
