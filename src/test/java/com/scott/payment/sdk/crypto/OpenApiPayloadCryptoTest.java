@@ -2,6 +2,7 @@ package com.scott.payment.sdk.crypto;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.scott.payment.sdk.json.JsonSupport;
+import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -40,5 +41,27 @@ class OpenApiPayloadCryptoTest {
                 .containsEntry("alg", "RSA-OAEP-256")
                 .containsEntry("enc", "A256GCM");
         assertThat(header).doesNotContainKey("kid");
+    }
+
+    /**
+     * 验证 SDK 对外公开的 compact payload 拆分方法可直接获取 encryptedAesKey、iv、cipherText 和 tag。
+     */
+    @Test
+    void shouldSplitCompactPayloadPartsForMerchantReference() throws Exception {
+        OpenApiPayloadCrypto crypto = new OpenApiPayloadCrypto();
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair keyPair = generator.generateKeyPair();
+
+        OpenApiPayloadParts encryptedParts = crypto.encryptToParts("{\"orderNo\":\"ORDER-PARTS\"}", keyPair.getPublic());
+        OpenApiPayloadParts splitParts = crypto.splitCompactPayload(encryptedParts.toCompactPayload());
+
+        assertThat(splitParts.getProtectedHeader()).isEqualTo(encryptedParts.getProtectedHeader());
+        assertThat(splitParts.getHeader()).contains("\"typ\":\"PAYMENT-PAYLOAD\"");
+        assertThat(splitParts.getEncryptedAesKey()).isEqualTo(encryptedParts.getEncryptedAesKey());
+        assertThat(splitParts.getIv()).isEqualTo(encryptedParts.getIv());
+        assertThat(splitParts.getCipherText()).isEqualTo(encryptedParts.getCipherText());
+        assertThat(splitParts.getTag()).isEqualTo(encryptedParts.getTag());
+        assertThat(crypto.decrypt(splitParts.toCompactPayload(), keyPair.getPrivate())).contains("ORDER-PARTS");
     }
 }

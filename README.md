@@ -211,6 +211,38 @@ payment.gateway.debug-raw-log-enabled=true
 
 该开关只建议用于沙盒联调或本地排查。开启后会打印请求明文、响应明文和完整密文 data；Authorization、卡号、CVC、邮箱、手机号、证件号和密钥类字段仍会脱敏，不建议在生产环境或包含真实持卡人数据的环境开启。
 
+### 手动拆分密文参数
+
+如果商户需要在文档或本地 case 中单独查看 `encryptedAesKey`、`iv`、`cipherText`、`tag`，可以直接使用 SDK 的拆分方法：
+
+```java
+OpenApiPayloadCrypto crypto = new OpenApiPayloadCrypto();
+OpenApiPayloadParts parts = crypto.splitCompactPayload(encryptedRequest.getData());
+
+String encryptedAesKey = parts.getEncryptedAesKey();
+String iv = parts.getIv();
+String cipherText = parts.getCipherText();
+String tag = parts.getTag();
+```
+
+如果只是想演示“明文如何加密并拆分”，可以使用：
+
+```java
+OpenApiPayloadParts parts = crypto.encryptToParts(plainJson, platformRequestPublicKey);
+String realRequestData = parts.toCompactPayload();
+```
+
+参考用例：`OpenApiPayloadPartsReferenceTest`，专门演示 `protectedHeader`、`encryptedAesKey`、`iv`、`cipherText`、`tag` 拆分；`OpenApiPayloadCryptoReferenceTest` 包含请求加密、密文参数拆分和响应解密三个综合 case。
+
+### 签名算法与 Apifox 文档
+
+商户签名、请求头、POST 加密请求体、GET 请求头、响应解密的可复制参考代码见：
+
+- `OpenApiSignatureReferenceTest`：JWT 签名、Authorization、POST/GET 请求头和 POST 加密请求体示例；
+- `OpenApiPayloadPartsReferenceTest`：compact payload 五段字段拆分示例；
+- `OpenApiPayloadCryptoReferenceTest`：请求加密、compact payload 拆分和响应解密示例；
+- `openapi-signature-encryption.md`：可导入 Apifox 的 Markdown 文档。
+
 ## FAQ
 
 **SDK 使用哪种鉴权协议？**  

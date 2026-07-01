@@ -4,6 +4,7 @@ import com.scott.payment.sdk.crypto.OpenApiPayloadCrypto;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
+import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
@@ -37,17 +38,18 @@ class OpenApiClientEncryptedPayloadLogTest {
 
         String compact = crypto.encrypt("{\"orderNo\":\"ORDER-DEBUG\"}", keyPair.getPublic());
         String[] parts = compact.split("\\.");
-        Map<String, String> components = OpenApiClient.compactPayloadComponentsForLog(compact);
+        OpenApiPayloadParts components = OpenApiClient.compactPayloadComponentsForLog(compact);
 
-        assertThat(components).containsEntry("protectedHeader", parts[0])
-                .containsEntry("encryptedAesKey", parts[1])
-                .containsEntry("iv", parts[2])
-                .containsEntry("cipherText", parts[3])
-                .containsEntry("tag", parts[4]);
-        assertThat(components.get("header")).contains("\"typ\":\"PAYMENT-PAYLOAD\"")
+        assertThat(components).isNotNull();
+        assertThat(components.getProtectedHeader()).isEqualTo(parts[0]);
+        assertThat(components.getEncryptedAesKey()).isEqualTo(parts[1]);
+        assertThat(components.getIv()).isEqualTo(parts[2]);
+        assertThat(components.getCipherText()).isEqualTo(parts[3]);
+        assertThat(components.getTag()).isEqualTo(parts[4]);
+        assertThat(components.getHeader()).contains("\"typ\":\"PAYMENT-PAYLOAD\"")
                 .contains("\"alg\":\"RSA-OAEP-256\"")
                 .contains("\"enc\":\"A256GCM\"");
-        assertThat(OpenApiClient.compactPayloadComponentsForLog("invalid")).isEmpty();
+        assertThat(OpenApiClient.compactPayloadComponentsForLog("invalid")).isNull();
     }
 
     /**

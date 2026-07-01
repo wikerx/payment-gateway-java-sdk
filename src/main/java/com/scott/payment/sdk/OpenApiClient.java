@@ -19,6 +19,7 @@ import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedResponse;
+import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
@@ -37,10 +38,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -93,41 +92,6 @@ public class OpenApiClient {
             return requestId;
         }
     }
-
-    /**
-     * compact 加密 payload 固定分段数：protectedHeader.encryptedAesKey.iv.cipherText.tag。
-     */
-    private static final int COMPACT_PAYLOAD_PARTS = 5;
-
-    /**
-     * compact protected header 字段名。
-     */
-    private static final String COMPACT_PROTECTED_HEADER = "protectedHeader";
-
-    /**
-     * compact protected header 解码后的 JSON 字段名。
-     */
-    private static final String COMPACT_HEADER = "header";
-
-    /**
-     * compact RSA-OAEP 加密后的 AES 会话密钥字段名。
-     */
-    private static final String COMPACT_ENCRYPTED_AES_KEY = "encryptedAesKey";
-
-    /**
-     * compact AES-GCM IV 字段名。
-     */
-    private static final String COMPACT_IV = "iv";
-
-    /**
-     * compact AES-GCM 密文字段名。
-     */
-    private static final String COMPACT_CIPHER_TEXT = "cipherText";
-
-    /**
-     * compact AES-GCM 认证标签字段名。
-     */
-    private static final String COMPACT_TAG = "tag";
 
     /**
      * SDK 客户端运行配置。
@@ -455,10 +419,10 @@ public class OpenApiClient {
      */
     private OpenApiEncryptedRequest encryptRequest(Object plainRequest) {
         String requestJson = JsonSupport.toJson(plainRequest);
-        String encryptedData = payloadCrypto.encrypt(requestJson, platformPublicKey);
+        OpenApiPayloadParts encryptedParts = payloadCrypto.encryptToParts(requestJson, platformPublicKey);
         return OpenApiEncryptedRequest.builder()
                 .livemode(config.getLivemode())
-                .data(encryptedData)
+                .data(encryptedParts.toCompactPayload())
                 .build();
     }
 
@@ -636,44 +600,28 @@ public class OpenApiClient {
     }
 
     private void logEncryptedPayloadComponents(String logName, String compactPayload) {
-        Map<String, String> components = compactPayloadComponentsForLog(compactPayload);
-        if (components.isEmpty()) {
+        OpenApiPayloadParts parts = compactPayloadComponentsForLog(compactPayload);
+        if (parts == null) {
             logJson(logName + "跳过", logFields("reason", "invalid_compact_payload"));
             return;
         }
         logJson(logName, logFields(
-                COMPACT_PROTECTED_HEADER, components.get(COMPACT_PROTECTED_HEADER),
-                COMPACT_HEADER, components.get(COMPACT_HEADER),
-                COMPACT_ENCRYPTED_AES_KEY, components.get(COMPACT_ENCRYPTED_AES_KEY),
-                COMPACT_IV, components.get(COMPACT_IV),
-                COMPACT_CIPHER_TEXT, components.get(COMPACT_CIPHER_TEXT),
-                COMPACT_TAG, components.get(COMPACT_TAG)));
+                "protectedHeader", parts.getProtectedHeader(),
+                "header", parts.getHeader(),
+                "encryptedAesKey", parts.getEncryptedAesKey(),
+                "iv", parts.getIv(),
+                "cipherText", parts.getCipherText(),
+                "tag", parts.getTag()));
     }
 
-    static Map<String, String> compactPayloadComponentsForLog(String compactPayload) {
+    static OpenApiPayloadParts compactPayloadComponentsForLog(String compactPayload) {
         if (StringUtils.isBlank(compactPayload)) {
-            return java.util.Collections.emptyMap();
+            return null;
         }
-        String[] parts = compactPayload.split("\\.", -1);
-        if (parts.length != COMPACT_PAYLOAD_PARTS) {
-            return java.util.Collections.emptyMap();
-        }
-        Map<String, String> components = new LinkedHashMap<String, String>();
-        components.put(COMPACT_PROTECTED_HEADER, parts[0]);
-        components.put(COMPACT_HEADER, decodeProtectedHeaderForLog(parts[0]));
-        components.put(COMPACT_ENCRYPTED_AES_KEY, parts[1]);
-        components.put(COMPACT_IV, parts[2]);
-        components.put(COMPACT_CIPHER_TEXT, parts[3]);
-        components.put(COMPACT_TAG, parts[4]);
-        return components;
-    }
-
-    private static String decodeProtectedHeaderForLog(String protectedHeader) {
         try {
-            byte[] headerBytes = Base64.getUrlDecoder().decode(protectedHeader);
-            return new String(headerBytes, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException exception) {
-            return protectedHeader;
+            return new OpenApiPayloadCrypto().splitCompactPayload(compactPayload);
+        } catch (RuntimeException exception) {
+            return null;
         }
     }
 
