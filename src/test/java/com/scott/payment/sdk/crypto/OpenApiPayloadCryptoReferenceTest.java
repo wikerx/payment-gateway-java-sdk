@@ -61,6 +61,15 @@ class OpenApiPayloadCryptoReferenceTest {
         log.info("商户参考用例-请求密文参数: {}", JsonSupport.toLogJson(encryptedRequest));
         log.info("商户参考用例-请求参数拆分: {}", JsonSupport.toLogJson(requestParts));
 
+        String encryptedAesKey = requestParts.getEncryptedAesKey();
+        String iv = requestParts.getIv();
+        String cipherText = requestParts.getCipherText();
+        String tag = requestParts.getTag();
+        log.info("encryptedAesKey：{}" , encryptedAesKey);
+        log.info("iv：{}" , iv);
+        log.info("cipherText：{}" , cipherText);
+        log.info("tag：{}" , tag);
+
         assertThat(encryptedRequest.getLivemode()).isEqualTo(config.getLivemode());
         assertThat(encryptedRequest.getData()).isEqualTo(requestParts.toCompactPayload());
         assertThat(encryptedRequest.getData().split("\\.", -1)).hasSize(5);

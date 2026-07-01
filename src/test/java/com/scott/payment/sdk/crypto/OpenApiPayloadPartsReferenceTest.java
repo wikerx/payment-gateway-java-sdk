@@ -56,6 +56,15 @@ class OpenApiPayloadPartsReferenceTest {
         log.info("商户参考用例-请求密文参数: {}", JsonSupport.toLogJson(encryptedRequest));
         log.info("商户参考用例-请求参数拆分: {}", JsonSupport.toLogJson(splitParts));
 
+        String encryptedAesKey = requestParts.getEncryptedAesKey();
+        String iv = requestParts.getIv();
+        String cipherText = requestParts.getCipherText();
+        String tag = requestParts.getTag();
+        log.info("encryptedAesKey：{}" , encryptedAesKey);
+        log.info("iv：{}" , iv);
+        log.info("cipherText：{}" , cipherText);
+        log.info("tag：{}" , tag);
+
         assertThat(splitParts.getHeader()).contains("\"typ\":\"PAYMENT-PAYLOAD\"")
                 .contains("\"alg\":\"RSA-OAEP-256\"")
                 .contains("\"enc\":\"A256GCM\"");
