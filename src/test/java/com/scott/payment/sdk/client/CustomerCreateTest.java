@@ -1,11 +1,11 @@
 package com.scott.payment.sdk.client;
 
-import com.scott.payment.sdk.PaymentGatewayClient;
-import com.scott.payment.sdk.PaymentGatewayResult;
+import com.scott.payment.sdk.OpenApiClient;
+import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
-import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
-import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
+import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -29,9 +29,9 @@ class CustomerCreateTest {
      * 验证创建客户接口使用最新 OpenAPI 加密协议。
      */
     @Test
-    void createCustomer() {
-        CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
-        PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
+    void createCustomer_shouldSuccess() {
+        CapturingOpenApiTransport transport = new CapturingOpenApiTransport();
+        OpenApiClient client = new OpenApiClient(OpenApiTestSupport.clientConfig(), transport);
         CustomerCreateRequest request = new CustomerCreateRequest();
         request.setFirstname("Ada");
         request.setLastname("Lovelace");
@@ -39,15 +39,18 @@ class CustomerCreateTest {
         request.setPhone("+12025550123");
         request.setCountry("US");
 
-        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        log.info("用例开始: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "CustomerCreateTest",
+                "apiName", "Customer Create",
+                "request", request,
                 "country", request.getCountry(),
                 "emailDomain", "example.com")));
-        PaymentGatewayResult<CustomerResponse> result = client.createCustomer(request);
-        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        OpenApiResult<CustomerResponse> result = client.createCustomer(request);
+        log.info("用例结果: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "CustomerCreateTest",
+                "apiName", "Customer Create",
                 "success", result.isSuccess(),
-                "customerId", result.getData().getCustomerId(),
+                "data", result.getData(),
                 "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/mer/customers");

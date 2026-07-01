@@ -26,8 +26,8 @@ Java import 包名为 `com.scott.payment.sdk`，Maven 发布坐标为 `com.scott
 常用 import 示例：
 
 ```java
-import com.scott.payment.sdk.PaymentGatewayClient;
-import com.scott.payment.sdk.PaymentGatewayResult;
+import com.scott.payment.sdk.OpenApiClient;
+import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.CardPaymentMethodData;
 import com.scott.payment.sdk.model.common.CustomerInfo;
@@ -60,7 +60,7 @@ payment.gateway.merchant-response-private-key-path=classpath:keys/2606177036_MER
 
 `livemode=false` 只请求沙盒 / 测试数据源，`livemode=true` 只请求生产数据源。SDK 不根据 API 私钥是否包含 `_test_` 推断环境。
 
-`payment.gateway.debug-raw-log-enabled=true` 会打印完整请求地址、请求头、请求明文、请求密文、响应密文和响应明文，便于沙盒联调核验。开启后 `Authorization` JWT、加密后的 `data`、客户资料、余额和交易状态等数据会进入应用日志；SDK 只保留卡号模型 `toString()` 排除和卡号脱敏辅助方法，其他字段默认明文输出，生产环境建议关闭。
+`payment.gateway.debug-raw-log-enabled=true` 会打印完整请求地址、请求头、请求明文、请求密文、响应密文和响应明文，便于沙盒联调核验。开启后完整密文 `data`、客户资料、余额和交易状态等数据会进入应用日志；`Authorization` JWT、卡号、CVC、邮箱、手机号、证件号和密钥类字段仍会脱敏，生产环境建议关闭。
 
 密钥也可以直接使用文本配置，文件配置优先于文本配置：
 
@@ -77,7 +77,7 @@ payment.gateway.merchant-response-private-key=<pkcs8-private-key-base64-or-pem>
 ## 创建客户端
 
 ```java
-PaymentGatewayClient client = PaymentGatewayClient.create();
+OpenApiClient client = OpenApiClient.create();
 ```
 
 ## 收银台支付
@@ -91,7 +91,7 @@ request.setReturnUrl("https://merchant.example.com/return");
 request.setNotifyUrl("https://merchant.example.com/notify");
 request.setPaymentMethod("CHECKOUT");
 
-PaymentGatewayResult<PaymentResponse> result = client.createCheckoutPayment(request);
+OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ```
 
 金额请使用 `new BigDecimal("14.99")`，不要使用 `new BigDecimal(14.99)`。
@@ -112,7 +112,7 @@ card.setExpYear("2030");
 card.setCvc("123");
 request.setPaymentMethodData(card);
 
-PaymentGatewayResult<PaymentResponse> result = client.createCardPayment(request);
+OpenApiResult<PaymentResponse> result = client.createCardPayment(request);
 ```
 
 卡号和 CVC 已从模型 `toString()` 中排除；商户侧仍必须避免自行打印请求对象。
@@ -127,7 +127,7 @@ request.setAmount(new BigDecimal("9.99"));
 request.setPaymentMethod("PAY_PAL");
 request.setPaymentMethodData(Collections.singletonMap("email", "receiver@example.com"));
 
-PaymentGatewayResult<PayoutResponse> result = client.createPayout(request);
+OpenApiResult<PayoutResponse> result = client.createPayout(request);
 ```
 
 ## 退款
@@ -140,16 +140,16 @@ request.setAmount(new BigDecimal("14.99"));
 request.setRefundAmount(new BigDecimal("14.99"));
 request.setRefundReason("Customer request");
 
-PaymentGatewayResult<RefundResponse> result = client.createRefund(request);
+OpenApiResult<RefundResponse> result = client.createRefund(request);
 ```
 
 ## 查询与余额
 
 ```java
-PaymentGatewayResult<PaymentResponse> payment = client.retrievePayment("pay_123");
-PaymentGatewayResult<PayoutResponse> payout = client.retrievePayout("po_123");
-PaymentGatewayResult<RefundResponse> refund = client.retrieveRefund("re_123");
-PaymentGatewayResult<List<BalanceResponse>> balances = client.retrieveBalances("USD");
+OpenApiResult<PaymentResponse> payment = client.retrievePayment("pay_123");
+OpenApiResult<PayoutResponse> payout = client.retrievePayout("po_123");
+OpenApiResult<RefundResponse> refund = client.retrieveRefund("re_123");
+OpenApiResult<List<BalanceResponse>> balances = client.retrieveBalances("USD");
 ```
 
 ## 客户
@@ -161,34 +161,34 @@ request.setLastname("Lovelace");
 request.setEmail("ada@example.com");
 request.setCountry("US");
 
-PaymentGatewayResult<CustomerResponse> result = client.createCustomer(request);
+OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 ```
 
 ## 当前协议说明
 
 - 已集成接口统一按后端 `@VerificationAndProcessing` 走 Bearer JWT。JWT 使用商户 API 私钥做 HS256 签名，并包含 `merchantId`、`livemode`、`jti`、`iat`、`exp`。
 - POST 请求体格式为 `{"livemode":false,"data":"compact密文"}`；GET 请求无 body，但 JWT 中仍必须携带 `livemode`。
-- 响应外层包含 `livemode`。SDK 会校验响应 `livemode` 与本地配置一致，不一致时抛出 `PaymentGatewayResponseException`。
-- SDK 当前封装了代收、退款、代付、余额、客户接口，并按接口提供独立 case，例如 `FundAccountsBalanceInquiryTest`。代收、退款、代付、余额走当前注解加密协议；客户接口按当前网关模块边界继续走历史 Payment 鉴权。
+- 响应外层包含 `livemode`。SDK 会校验响应 `livemode` 与本地配置一致，不一致时抛出 `OpenApiResponseException`。
+- SDK 当前封装了代收、退款、代付、余额、客户接口，并按接口提供独立 case，例如 `FundAccountsBalanceInquiryTest`。这些对外 API 均按当前 `@VerificationAndProcessing` 注解加密协议调用。
 - compact payload header 固定：`typ=PAYMENT-PAYLOAD`、`alg=RSA-OAEP-256`、`enc=A256GCM`，不输出 `kid`。
 
 ## 异常
 
-SDK 根异常为 `PaymentGatewayException`。
+SDK 根异常为 `OpenApiException`。
 
 | 异常 | 场景 |
 |---|---|
-| `PaymentGatewayConfigException` | 配置缺失、密钥为空、URL 非法 |
-| `PaymentGatewayCryptoException` | RSA、AES-GCM、密钥解析、密文格式错误 |
-| `PaymentGatewayHttpException` | 网络失败或 HTTP 非 2xx |
-| `PaymentGatewayResponseException` | 响应 JSON 非法、响应 data 解密或反序列化失败 |
-| `PaymentGatewayValidationException` | 请求参数基础校验失败 |
+| `OpenApiConfigException` | 配置缺失、密钥为空、URL 非法 |
+| `OpenApiCryptoException` | RSA、AES-GCM、密钥解析、密文格式错误 |
+| `OpenApiHttpException` | 网络失败或 HTTP 非 2xx |
+| `OpenApiResponseException` | 响应 JSON 非法、响应 data 解密或反序列化失败 |
+| `OpenApiValidationException` | 请求参数基础校验失败 |
 
-HTTP 2xx 且业务失败时，SDK 返回 `PaymentGatewayResult<T>`，商户应根据 `code`、`msg` 和 `isSuccess()` 处理。
+HTTP 2xx 且业务失败时，SDK 返回 `OpenApiResult<T>`，商户应根据 `code`、`msg` 和 `isSuccess()` 处理。
 
 ## 日志
 
-SDK 只依赖 `slf4j-api`。默认日志使用 `请求头: {}`、`请求开始: {}`、`请求结束: {}`、`请求参数摘要: {}`、`响应参数摘要: {}` 等标准 key-value + JSON 格式。商户号、JWT、账户号和业务字段默认明文输出；卡号和 CVC 不会出现在模型 `toString()` 中，商户也应避免自行打印含卡号对象。
+SDK 只依赖 `slf4j-api`。默认日志使用 `请求头: {}`、`API调用开始: {}`、`API调用结束: {}` 等标准 key-value + JSON 格式。默认日志只输出摘要和脱敏 Header，完整 JWT、密钥、卡号、CVC、邮箱、手机号和证件号不会进入普通日志。
 
 如需核验实际传输数据，可在 `merchant-config.properties` 中设置：
 
@@ -198,20 +198,23 @@ payment.gateway.debug-raw-log-enabled=true
 
 开启后会额外打印：
 
-- `请求地址: {}`：完整请求地址；
-- `原始请求头: {}`：完整请求头；
-- `原始请求参数: {}`：加密前请求明文，GET 请求为 `null`；
-- `请求参数加密: {}`：实际发送请求报文，即加密后的 envelope；
-- `原始响应参数: {}`：响应状态、响应头和响应密文报文；
-- `响应参数解密: {}`：SDK 解密后的响应 data 明文；
-- `加密参数拆分: {}`：请求或响应 `data` 的 compact payload 拆分字段，包含 `protectedHeader`、`header`、`encryptedAesKey`、`iv`、`cipherText`、`tag`。
+- `请求地址: {}`：SDK 实际请求的平台 URL；
+- `请求头: {}`：SDK 实际请求 Header，`Authorization` 会脱敏；
+- `请求原始明文报文: {}`：加密前业务请求 DTO，按字段输出对象结构并脱敏敏感字段；
+- `请求参数拆分: {}`：请求 `data` 的 compact payload 拆分字段，包含 `protectedHeader`、`header`、`encryptedAesKey`、`iv`、`cipherText`、`tag`；
+- `请求密文参数: {}`：SDK 真实发送给平台的请求 body，即 `OpenApiEncryptedRequest`；
+- `响应原始密文参数: {}`：平台返回的原始响应状态、响应 Header 和 `OpenApiEncryptedResponse`；
+- `响应原始明文参数: {}`：SDK 解密并转换后的业务响应 DTO，按字段输出对象结构并脱敏敏感字段；
+- `响应参数拆分: {}`：响应 `data` 的 compact payload 拆分字段，包含 `protectedHeader`、`header`、`encryptedAesKey`、`iv`、`cipherText`、`tag`。
 
-该开关只建议用于沙盒联调或本地排查。开启后会打印完整 JWT、请求明文和响应明文，不建议在生产环境或包含真实持卡人数据的环境开启。
+报文日志会过滤 null 字段，避免商户联调时看到大量无效参数。`requestId` 是 SDK 链路追踪字段，只出现在 `X-Request-Id` Header、`API调用开始` 和 `API调用结束` 日志中，不会放入请求或响应报文日志。
+
+该开关只建议用于沙盒联调或本地排查。开启后会打印请求明文、响应明文和完整密文 data；Authorization、卡号、CVC、邮箱、手机号、证件号和密钥类字段仍会脱敏，不建议在生产环境或包含真实持卡人数据的环境开启。
 
 ## FAQ
 
-**为什么公开文档仍写旧签名？**  
-后端当前是新旧协议并存：本 SDK 已集成的商户 OpenAPI 走 `@VerificationAndProcessing`；未迁移到注解链路的历史接口仍可能继续使用 `Payment Base64(apiPrivateKey)`。
+**SDK 使用哪种鉴权协议？**  
+当前 SDK 对外 API 统一使用 `Authorization: Bearer {jwt}`，POST 请求统一发送 `livemode + data` 加密外壳，GET 请求没有请求体但响应 `data` 仍会解密为业务 DTO。
 
 **为什么 GET 查询没有请求体 data？**  
 GET 查询通过 Bearer JWT 携带 `merchantId + livemode` 完成鉴权和数据源路由，响应 `data` 仍按商户响应公钥加密。

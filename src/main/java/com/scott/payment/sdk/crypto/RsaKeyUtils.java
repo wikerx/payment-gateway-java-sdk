@@ -1,6 +1,6 @@
 package com.scott.payment.sdk.crypto;
 
-import com.scott.payment.sdk.exception.PaymentGatewayCryptoException;
+import com.scott.payment.sdk.exception.OpenApiCryptoException;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -13,7 +13,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * RSA 密钥解析工具，支持 PEM 和 DER Base64 两种输入形态。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : RsaKeyUtils
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : RSA 密钥解析工具，负责将 PEM 或 DER Base64 文本转换为 X.509 公钥、PKCS#8 私钥或 PEM 输出文本。
+ *                本类不生成密钥、不轮换密钥、不访问远程服务；私钥文本属于敏感数据，不得写入普通日志或异常消息。
+ * @status : modify
  */
 public final class RsaKeyUtils {
 
@@ -46,7 +53,7 @@ public final class RsaKeyUtils {
             byte[] encoded = Base64.getDecoder().decode(normalizePem(value));
             return KeyFactory.getInstance(RSA).generatePublic(new X509EncodedKeySpec(encoded));
         } catch (IllegalArgumentException | GeneralSecurityException exception) {
-            throw new PaymentGatewayCryptoException("OpenAPI platform public key can not be parsed", exception);
+            throw new OpenApiCryptoException("OpenAPI platform public key can not be parsed", exception);
         }
     }
 
@@ -61,7 +68,7 @@ public final class RsaKeyUtils {
             byte[] encoded = Base64.getDecoder().decode(normalizePem(value));
             return KeyFactory.getInstance(RSA).generatePrivate(new PKCS8EncodedKeySpec(encoded));
         } catch (IllegalArgumentException | GeneralSecurityException exception) {
-            throw new PaymentGatewayCryptoException("OpenAPI merchant response private key can not be parsed", exception);
+            throw new OpenApiCryptoException("OpenAPI merchant response private key can not be parsed", exception);
         }
     }
 
@@ -85,9 +92,15 @@ public final class RsaKeyUtils {
         return toPem(base64, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
     }
 
+    /**
+     * 标准化 PEM 或 DER Base64 密钥文本。
+     *
+     * @param value PEM 或 DER Base64 文本
+     * @return 去除头尾和空白后的 DER Base64 文本
+     */
     private static String normalizePem(String value) {
         if (value == null || value.trim().isEmpty()) {
-            throw new PaymentGatewayCryptoException("OpenAPI key can not be blank");
+            throw new OpenApiCryptoException("OpenAPI key can not be blank");
         }
         // 平台可能导出带 metadata 的 PEM，这里只保留真正 PEM 块再剥离头尾。
         return extractPemBlock(value)
@@ -112,6 +125,14 @@ public final class RsaKeyUtils {
         return value;
     }
 
+    /**
+     * 将 DER Base64 文本转换为 PEM 格式。
+     *
+     * @param value DER Base64 文本
+     * @param begin PEM 起始行
+     * @param end PEM 结束行
+     * @return PEM 文本
+     */
     private static String toPem(String value, String begin, String end) {
         String normalized = normalizePem(value);
         StringBuilder builder = new StringBuilder(begin).append('\n');

@@ -1,6 +1,6 @@
 package com.scott.payment.sdk.config;
 
-import com.scott.payment.sdk.PaymentGatewayClientConfig;
+import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.crypto.OpenApiPayloadCrypto;
 import com.scott.payment.sdk.crypto.RsaKeyUtils;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class MerchantConfigLoaderTest {
      */
     @Test
     void shouldLoadTextKeyConfig() {
-        PaymentGatewayClientConfig config = MerchantConfigLoader.load();
+        OpenApiClientConfig config = MerchantConfigLoader.load();
 
         assertThat(config.getMerchantId()).isEqualTo("2606177036");
         assertThat(config.getMerchantJwtSecret()).hasSizeGreaterThanOrEqualTo(32);
@@ -66,7 +66,7 @@ class MerchantConfigLoaderTest {
      */
     @Test
     void shouldNormalizeExportedPemWithMetadata() {
-        PaymentGatewayClientConfig config = MerchantConfigLoader.load();
+        OpenApiClientConfig config = MerchantConfigLoader.load();
         String platformPublicPem = "merNo=2606177036\nkeyVersion=v2\n\n"
                 + RsaKeyUtils.toPublicKeyPem(config.getPlatformPublicKey());
         String responsePrivatePem = "merNo=2606177036\nkeyVersion=v2\n\n"

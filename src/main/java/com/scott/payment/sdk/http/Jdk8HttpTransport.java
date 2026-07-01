@@ -1,7 +1,7 @@
 package com.scott.payment.sdk.http;
 
-import com.scott.payment.sdk.exception.PaymentGatewayHttpException;
-import com.scott.payment.sdk.config.PaymentGatewayConstants;
+import com.scott.payment.sdk.exception.OpenApiHttpException;
+import com.scott.payment.sdk.config.OpenApiConstants;
 import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +17,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 基于 Java 8 HttpURLConnection 的默认 HTTP 传输实现。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : Jdk8HttpTransport
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : 基于 Java 8 HttpURLConnection 的默认 HTTP 传输实现，负责发送 SDK 构造好的 OpenAPI HTTP 请求并读取响应。
+ *                本类不生成 JWT、不加密请求、不解密响应，也不判断支付、退款、代付或资金状态；网络异常时由上层查询接口确认业务结果。
+ * @status : modify
  */
 @Slf4j
 public class Jdk8HttpTransport implements HttpTransport {
@@ -48,8 +55,8 @@ public class Jdk8HttpTransport implements HttpTransport {
                 writeBody(connection, request.getBody());
             }
             int statusCode = connection.getResponseCode();
-            String body = readBody(statusCode >= PaymentGatewayConstants.HTTP_STATUS_SUCCESS_MIN
-                    && statusCode < PaymentGatewayConstants.HTTP_STATUS_SUCCESS_MAX_EXCLUSIVE
+            String body = readBody(statusCode >= OpenApiConstants.HTTP_STATUS_SUCCESS_MIN
+                    && statusCode < OpenApiConstants.HTTP_STATUS_SUCCESS_MAX_EXCLUSIVE
                     ? connection.getInputStream()
                     : connection.getErrorStream());
             log.debug("HTTP请求完成: {}", JsonSupport.toJson(logFields(
@@ -63,7 +70,7 @@ public class Jdk8HttpTransport implements HttpTransport {
                     .body(body)
                     .build();
         } catch (IOException exception) {
-            throw new PaymentGatewayHttpException("OpenAPI HTTP request failed", exception);
+            throw new OpenApiHttpException("OpenAPI HTTP request failed", exception);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -71,6 +78,13 @@ public class Jdk8HttpTransport implements HttpTransport {
         }
     }
 
+    /**
+     * 写入 HTTP 请求体。
+     *
+     * @param connection HTTP 连接
+     * @param body 请求体文本，OpenAPI POST 场景下为加密外壳 JSON
+     * @throws IOException 写入失败时抛出
+     */
     private void writeBody(HttpURLConnection connection, String body) throws IOException {
         byte[] bytes = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
         connection.setRequestProperty("Content-Length", String.valueOf(bytes.length));
@@ -79,6 +93,13 @@ public class Jdk8HttpTransport implements HttpTransport {
         }
     }
 
+    /**
+     * 读取 HTTP 响应体。
+     *
+     * @param inputStream 成功或错误响应流
+     * @return 响应体文本
+     * @throws IOException 读取失败时抛出
+     */
     private String readBody(InputStream inputStream) throws IOException {
         if (inputStream == null) {
             return "";
@@ -94,8 +115,14 @@ public class Jdk8HttpTransport implements HttpTransport {
         }
     }
 
+    /**
+     * 将 HttpURLConnection 多值响应头压平成 SDK Header Map。
+     *
+     * @param headers 多值响应头
+     * @return 单值响应头
+     */
     private Map<String, String> flattenHeaders(Map<String, List<String>> headers) {
-        Map<String, String> result = new HashMap<String, String>(PaymentGatewayConstants.HTTP_RESPONSE_HEADER_MAP_SIZE);
+        Map<String, String> result = new HashMap<String, String>(OpenApiConstants.HTTP_RESPONSE_HEADER_MAP_SIZE);
         if (headers == null) {
             return result;
         }

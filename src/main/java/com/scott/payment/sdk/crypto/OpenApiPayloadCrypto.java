@@ -1,8 +1,8 @@
 package com.scott.payment.sdk.crypto;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.scott.payment.sdk.config.PaymentGatewayConstants;
-import com.scott.payment.sdk.exception.PaymentGatewayCryptoException;
+import com.scott.payment.sdk.config.OpenApiConstants;
+import com.scott.payment.sdk.exception.OpenApiCryptoException;
 import com.scott.payment.sdk.json.JsonSupport;
 
 import javax.crypto.Cipher;
@@ -24,7 +24,15 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * OpenAPI 报文混合加解密工具，对齐后端 RSA-OAEP-SHA256 + AES-256-GCM compact 协议。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : OpenApiPayloadCrypto
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : OpenAPI 报文混合加解密组件，负责按 RSA-OAEP-SHA256 + AES-256-GCM compact 协议加密请求 data 和解密响应 data。
+ *                本类不签发 JWT、不发起 HTTP 请求、不修改支付、退款、代付或资金状态；明文只应存在于调用链内存中，普通日志不得输出。
+ *                加解密失败会抛出 SDK 加解密异常，异常消息不得携带明文、私钥或完整密文。
+ * @status : modify
  */
 public class OpenApiPayloadCrypto {
 
@@ -101,12 +109,12 @@ public class OpenApiPayloadCrypto {
      */
     public String decrypt(String compactPayload, PrivateKey privateKey) {
         if (compactPayload == null || compactPayload.trim().isEmpty()) {
-            throw new PaymentGatewayCryptoException("OpenAPI encrypted data can not be blank");
+            throw new OpenApiCryptoException("OpenAPI encrypted data can not be blank");
         }
         Objects.requireNonNull(privateKey, "privateKey can not be null");
         String[] parts = compactPayload.split("\\.", -1);
         if (parts.length != COMPACT_PARTS) {
-            throw new PaymentGatewayCryptoException("OpenAPI encrypted data format is invalid");
+            throw new OpenApiCryptoException("OpenAPI encrypted data format is invalid");
         }
         validateProtectedHeader(parts[0]);
         byte[] contentKey = rsaOaep(Cipher.DECRYPT_MODE, privateKey, base64UrlDecode(parts[1]));
@@ -117,33 +125,56 @@ public class OpenApiPayloadCrypto {
         return new String(plainText, StandardCharsets.UTF_8);
     }
 
+    /**
+     * 生成 compact payload 的 protected header。
+     *
+     * 该 header 会作为 AES-GCM AAD 参与认证，防止 typ、alg、enc 被篡改。
+     *
+     * @return base64url 编码后的 protected header
+     */
     private String encodeProtectedHeader() {
         // compact 第一段参与 AES-GCM AAD 校验，服务端会校验 typ/alg/enc 三个固定协议字段。
         Map<String, String> header = new LinkedHashMap<>();
-        header.put(PaymentGatewayConstants.PAYLOAD_HEADER_TYPE, PaymentGatewayConstants.PAYLOAD_TYPE);
-        header.put(PaymentGatewayConstants.PAYLOAD_HEADER_ALGORITHM, KEY_ENCRYPTION_ALGORITHM);
-        header.put(PaymentGatewayConstants.PAYLOAD_HEADER_ENCRYPTION, CONTENT_ENCRYPTION_ALGORITHM);
+        header.put(OpenApiConstants.PAYLOAD_HEADER_TYPE, OpenApiConstants.PAYLOAD_TYPE);
+        header.put(OpenApiConstants.PAYLOAD_HEADER_ALGORITHM, KEY_ENCRYPTION_ALGORITHM);
+        header.put(OpenApiConstants.PAYLOAD_HEADER_ENCRYPTION, CONTENT_ENCRYPTION_ALGORITHM);
         return base64Url(JsonSupport.toJson(header).getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * 校验 compact payload 的 protected header。
+     *
+     * @param protectedHeader base64url 编码后的 protected header
+     * @throws OpenApiCryptoException header 不可解析或协议字段不匹配时抛出
+     */
     private void validateProtectedHeader(String protectedHeader) {
         try {
             String headerJson = new String(base64UrlDecode(protectedHeader), StandardCharsets.UTF_8);
             Map<String, String> header = JsonSupport.fromJson(headerJson, new TypeReference<Map<String, String>>() {
             });
-            if (!PaymentGatewayConstants.PAYLOAD_TYPE.equals(header.get(PaymentGatewayConstants.PAYLOAD_HEADER_TYPE))
-                    || !KEY_ENCRYPTION_ALGORITHM.equals(header.get(PaymentGatewayConstants.PAYLOAD_HEADER_ALGORITHM))
-                    || !CONTENT_ENCRYPTION_ALGORITHM.equals(header.get(PaymentGatewayConstants.PAYLOAD_HEADER_ENCRYPTION))) {
-                throw new PaymentGatewayCryptoException("OpenAPI encrypted data header is invalid");
+            if (!OpenApiConstants.PAYLOAD_TYPE.equals(header.get(OpenApiConstants.PAYLOAD_HEADER_TYPE))
+                    || !KEY_ENCRYPTION_ALGORITHM.equals(header.get(OpenApiConstants.PAYLOAD_HEADER_ALGORITHM))
+                    || !CONTENT_ENCRYPTION_ALGORITHM.equals(header.get(OpenApiConstants.PAYLOAD_HEADER_ENCRYPTION))) {
+                throw new OpenApiCryptoException("OpenAPI encrypted data header is invalid");
             }
         } catch (RuntimeException exception) {
-            if (exception instanceof PaymentGatewayCryptoException) {
+            if (exception instanceof OpenApiCryptoException) {
                 throw exception;
             }
-            throw new PaymentGatewayCryptoException("OpenAPI encrypted data header can not be parsed", exception);
+            throw new OpenApiCryptoException("OpenAPI encrypted data header can not be parsed", exception);
         }
     }
 
+    /**
+     * 执行 AES-256-GCM 加密或解密。
+     *
+     * @param mode JCE 加解密模式
+     * @param contentKey AES 内容密钥
+     * @param iv GCM IV
+     * @param protectedHeader compact 第一段 header，用作 AAD
+     * @param input 明文或密文输入
+     * @return 加密或解密后的字节
+     */
     private byte[] aesGcm(int mode, byte[] contentKey, byte[] iv, String protectedHeader, byte[] input) {
         try {
             Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
@@ -152,10 +183,18 @@ public class OpenApiPayloadCrypto {
             cipher.updateAAD(protectedHeader.getBytes(StandardCharsets.US_ASCII));
             return cipher.doFinal(input);
         } catch (GeneralSecurityException exception) {
-            throw new PaymentGatewayCryptoException("OpenAPI AES-GCM crypto failed", exception);
+            throw new OpenApiCryptoException("OpenAPI AES-GCM crypto failed", exception);
         }
     }
 
+    /**
+     * 执行 RSA-OAEP-SHA256 加密或解密 AES 会话密钥。
+     *
+     * @param mode JCE 加解密模式
+     * @param key RSA 公钥或私钥
+     * @param input AES 会话密钥明文或密文
+     * @return 处理后的密钥字节
+     */
     private byte[] rsaOaep(int mode, Key key, byte[] input) {
         try {
             Cipher cipher = Cipher.getInstance(RSA_OAEP_TRANSFORMATION);
@@ -168,28 +207,53 @@ public class OpenApiPayloadCrypto {
             cipher.init(mode, key, spec);
             return cipher.doFinal(input);
         } catch (GeneralSecurityException exception) {
-            throw new PaymentGatewayCryptoException("OpenAPI RSA-OAEP crypto failed", exception);
+            throw new OpenApiCryptoException("OpenAPI RSA-OAEP crypto failed", exception);
         }
     }
 
+    /**
+     * 生成加密所需随机字节。
+     *
+     * @param length 字节长度
+     * @return 安全随机字节
+     */
     private byte[] randomBytes(int length) {
         byte[] value = new byte[length];
         secureRandom.nextBytes(value);
         return value;
     }
 
+    /**
+     * 执行无 padding 的 base64url 编码。
+     *
+     * @param value 原始字节
+     * @return base64url 文本
+     */
     private String base64Url(byte[] value) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
     }
 
+    /**
+     * 解码 base64url 文本。
+     *
+     * @param value base64url 文本
+     * @return 解码后的字节
+     */
     private byte[] base64UrlDecode(String value) {
         try {
             return Base64.getUrlDecoder().decode(value);
         } catch (IllegalArgumentException exception) {
-            throw new PaymentGatewayCryptoException("OpenAPI base64url data can not be decoded", exception);
+            throw new OpenApiCryptoException("OpenAPI base64url data can not be decoded", exception);
         }
     }
 
+    /**
+     * 拼接 AES-GCM 密文和认证标签。
+     *
+     * @param left 密文字节
+     * @param right 认证标签字节
+     * @return 拼接后的字节数组
+     */
     private byte[] concat(byte[] left, byte[] right) {
         byte[] result = Arrays.copyOf(left, left.length + right.length);
         System.arraycopy(right, 0, result, left.length, right.length);

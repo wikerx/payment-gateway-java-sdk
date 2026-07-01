@@ -1,7 +1,8 @@
 package com.scott.payment.sdk.testkit;
 
-import com.scott.payment.sdk.PaymentGatewayClientConfig;
+import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.config.MerchantConfigLoader;
+import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -10,16 +11,16 @@ import java.util.Map;
 /**
  * @author : scott
  * @version : v1.0.0
- * @classname : PaymentGatewayTestSupport
+ * @classname : OpenApiTestSupport
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : SDK 测试支撑工具，负责加载 2606177036 沙盒商户配置并提供金额构造等测试辅助方法。
  *                本类不新增数据库测试数据，不发起真实外部渠道调用；返回的 API 密钥仅用于本地构造 JWT。
  * @status : modify
  */
-public final class PaymentGatewayTestSupport {
+public final class OpenApiTestSupport {
 
-    private PaymentGatewayTestSupport() {
+    private OpenApiTestSupport() {
     }
 
     /**
@@ -27,7 +28,7 @@ public final class PaymentGatewayTestSupport {
      *
      * @return 2606177036 沙盒商户 SDK 配置
      */
-    public static PaymentGatewayClientConfig clientConfig() {
+    public static OpenApiClientConfig clientConfig() {
         return MerchantConfigLoader.load();
     }
 
@@ -77,7 +78,7 @@ public final class PaymentGatewayTestSupport {
     public static Map<String, Object> logFields(Object... keyValues) {
         Map<String, Object> fields = new LinkedHashMap<String, Object>();
         for (int index = 0; index + 1 < keyValues.length; index += 2) {
-            fields.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+            fields.put(String.valueOf(keyValues[index]), OpenApiLogSanitizer.sanitizeObject(keyValues[index + 1]));
         }
         return fields;
     }

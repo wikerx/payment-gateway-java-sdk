@@ -1,11 +1,18 @@
 package com.scott.payment.sdk.config;
 
 /**
- * Payment Gateway SDK 内部固定协议常量。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : OpenApiConstants
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : OpenAPI SDK 内部固定协议常量，负责集中维护配置文件名、HTTP Header、JWT、compact payload 和商户接口路径。
+ *                本类不读取商户配置、不执行签名或加密、不修改资金状态；涉及路径和协议值的变更必须与网关 OpenAPI 规范同步。
+ * @status : create
  */
-public final class PaymentGatewayConstants {
+public final class OpenApiConstants {
 
-    private PaymentGatewayConstants() {
+    private OpenApiConstants() {
     }
 
     /**
@@ -69,7 +76,7 @@ public final class PaymentGatewayConstants {
     public static final String ACCEPT = "application/json";
 
     /**
-     * Payment Gateway 成功响应码。
+     * OpenAPI 成功响应码。
      */
     public static final int RESPONSE_CODE_SUCCESS = 0;
 
@@ -77,11 +84,6 @@ public final class PaymentGatewayConstants {
      * JWT Authorization Header 前缀。
      */
     public static final String AUTHORIZATION_PREFIX = "Bearer ";
-
-    /**
-     * 历史 Payment Authorization Header 前缀，未标注新协议的接口仍要求该鉴权方式。
-     */
-    public static final String AUTHORIZATION_PAYMENT_PREFIX = "Payment ";
 
     /**
      * Authorization Header 名称。

@@ -1,10 +1,10 @@
 package com.scott.payment.sdk.client;
 
-import com.scott.payment.sdk.PaymentGatewayClient;
-import com.scott.payment.sdk.PaymentGatewayResult;
+import com.scott.payment.sdk.OpenApiClient;
+import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
-import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
-import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
+import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author : scott
  * @version : v1.0.0
- * @classname : PayoutTradeTransferRetrieveTest
+ * @classname : PayoutTransferRetrieveTest
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : 检索代付交易接口商户调用 case，负责演示 /pay-api/payout/trade/transfer/{tradeNo} 的 Bearer JWT 查询流程。
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @status : create
  */
 @Slf4j
-class PayoutTradeTransferRetrieveTest {
+class PayoutTransferRetrieveTest {
 
     /**
      * 平台代付交易号，来自商户联调示例。
@@ -38,18 +38,21 @@ class PayoutTradeTransferRetrieveTest {
      * 该方法不修改资金或交易状态，只断言请求路径、授权头、空请求体和响应解析结果。
      */
     @Test
-    void retrievePayoutTradeTransfer() {
-        CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
-        PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
+    void retrievePayoutTransfer_shouldSuccess() {
+        CapturingOpenApiTransport transport = new CapturingOpenApiTransport();
+        OpenApiClient client = new OpenApiClient(OpenApiTestSupport.clientConfig(), transport);
 
-        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
-                "caseName", "PayoutTradeTransferRetrieveTest",
-                "merchantId", PaymentGatewayTestSupport.merchantId(),
+        log.info("用例开始: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
+                "caseName", "PayoutTransferRetrieveTest",
+                "apiName", "Payout Transfer Retrieve",
+                "merchantId", OpenApiTestSupport.merchantId(),
                 "tradeNo", TRADE_NO)));
-        PaymentGatewayResult<PayoutResponse> result = client.retrievePayout(TRADE_NO);
-        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
-                "caseName", "PayoutTradeTransferRetrieveTest",
+        OpenApiResult<PayoutResponse> result = client.retrievePayout(TRADE_NO);
+        log.info("用例结果: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
+                "caseName", "PayoutTransferRetrieveTest",
+                "apiName", "Payout Transfer Retrieve",
                 "success", result.isSuccess(),
+                "data", result.getData(),
                 "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");

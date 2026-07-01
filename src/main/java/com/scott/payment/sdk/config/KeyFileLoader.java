@@ -1,6 +1,6 @@
 package com.scott.payment.sdk.config;
 
-import com.scott.payment.sdk.exception.PaymentGatewayConfigException;
+import com.scott.payment.sdk.exception.OpenApiConfigException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -14,7 +14,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * OpenAPI RSA 密钥文本加载器，统一支持 classpath、file URI、普通文件路径和直接 Base64 文本。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : KeyFileLoader
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : OpenAPI RSA 密钥文本加载器，负责按配置优先级解析 classpath、file URI、普通文件路径和直接 Base64/PEM 文本。
+ *                本类只做本地密钥读取和 PEM 标准化，不生成密钥、不轮换密钥、不发起 HTTP 请求，也不修改资金或交易状态。
+ *                私钥和密钥文本属于敏感数据，异常消息只允许输出配置项名称，不得拼接密钥内容。
+ * @status : modify
  */
 public final class KeyFileLoader {
 
@@ -51,7 +59,7 @@ public final class KeyFileLoader {
         if (StringUtils.isNotBlank(inlineValue)) {
             return normalizePem(inlineValue);
         }
-        throw new PaymentGatewayConfigException(fieldName + " or " + fieldName + "-file can not be blank");
+        throw new OpenApiConfigException(fieldName + " or " + fieldName + "-file can not be blank");
     }
 
     /**
@@ -72,7 +80,7 @@ public final class KeyFileLoader {
             }
             return normalizePem(new String(Files.readAllBytes(Paths.get(location)), StandardCharsets.UTF_8));
         } catch (IllegalArgumentException | IOException exception) {
-            throw new PaymentGatewayConfigException(fieldName + "-file can not be loaded", exception);
+            throw new OpenApiConfigException(fieldName + "-file can not be loaded", exception);
         }
     }
 
@@ -91,7 +99,7 @@ public final class KeyFileLoader {
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
         if (StringUtils.isBlank(normalized)) {
-            throw new PaymentGatewayConfigException("OpenAPI key content can not be blank");
+            throw new OpenApiConfigException("OpenAPI key content can not be blank");
         }
         return normalized;
     }
@@ -110,17 +118,34 @@ public final class KeyFileLoader {
         return text;
     }
 
+    /**
+     * 从 classpath 读取密钥文件内容。
+     *
+     * @param path classpath 相对路径
+     * @param fieldName 用于错误提示的配置项名称
+     * @return 密钥文件原始文本
+     * @throws IOException 读取流失败时抛出
+     */
     private static String readClasspath(String path, String fieldName) throws IOException {
         String resourcePath = requireText(path, fieldName + "-file");
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try (InputStream inputStream = classLoader.getResourceAsStream(resourcePath)) {
             if (inputStream == null) {
-                throw new PaymentGatewayConfigException(fieldName + "-file can not be found in classpath");
+                throw new OpenApiConfigException(fieldName + "-file can not be found in classpath");
             }
             return new String(readAll(inputStream), StandardCharsets.UTF_8);
         }
     }
 
+    /**
+     * 读取输入流全部字节。
+     *
+     * 该方法只在内存中处理密钥文件内容，不写入磁盘或日志。
+     *
+     * @param inputStream 输入流
+     * @return 全量字节
+     * @throws IOException 读取失败时抛出
+     */
     private static byte[] readAll(InputStream inputStream) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
@@ -131,9 +156,16 @@ public final class KeyFileLoader {
         return outputStream.toByteArray();
     }
 
+    /**
+     * 校验配置文本非空。
+     *
+     * @param value 配置值
+     * @param fieldName 字段名
+     * @return 去除首尾空白后的配置值
+     */
     private static String requireText(String value, String fieldName) {
         if (StringUtils.isBlank(value)) {
-            throw new PaymentGatewayConfigException(fieldName + " can not be blank");
+            throw new OpenApiConfigException(fieldName + " can not be blank");
         }
         return value.trim();
     }

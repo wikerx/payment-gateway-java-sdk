@@ -1,7 +1,7 @@
 package com.scott.payment.sdk.config;
 
-import com.scott.payment.sdk.PaymentGatewayClientConfig;
-import com.scott.payment.sdk.exception.PaymentGatewayConfigException;
+import com.scott.payment.sdk.OpenApiClientConfig;
+import com.scott.payment.sdk.exception.OpenApiConfigException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,9 +30,9 @@ public final class MerchantConfigLoader {
      *
      * @return SDK 客户端配置
      */
-    public static PaymentGatewayClientConfig load() {
+    public static OpenApiClientConfig load() {
         Properties properties = loadProperties();
-        return PaymentGatewayClientConfig.builder()
+        return OpenApiClientConfig.builder()
                 .baseUrl(required(properties, "payment.gateway.base-url"))
                 .merchantId(required(properties, "payment.gateway.merchant-no"))
                 .livemode(requiredBoolean(properties, "payment.gateway.livemode"))
@@ -43,10 +43,10 @@ public final class MerchantConfigLoader {
                 .merchantResponsePrivateKey(keyValue(properties,
                         "payment.gateway.merchant-response-private-key-path",
                         "payment.gateway.merchant-response-private-key"))
-                .jwtTtlSeconds(PaymentGatewayConstants.JWT_TTL_SECONDS)
-                .connectTimeoutMs(PaymentGatewayConstants.HTTP_CONNECT_TIMEOUT_MS)
-                .readTimeoutMs(PaymentGatewayConstants.HTTP_READ_TIMEOUT_MS)
-                .defaultVersion(PaymentGatewayConstants.DEFAULT_VERSION)
+                .jwtTtlSeconds(OpenApiConstants.JWT_TTL_SECONDS)
+                .connectTimeoutMs(OpenApiConstants.HTTP_CONNECT_TIMEOUT_MS)
+                .readTimeoutMs(OpenApiConstants.HTTP_READ_TIMEOUT_MS)
+                .defaultVersion(OpenApiConstants.DEFAULT_VERSION)
                 .rawHttpLogEnabled(optionalBoolean(properties, "payment.gateway.debug-raw-log-enabled", Boolean.FALSE))
                 .build();
     }
@@ -54,16 +54,16 @@ public final class MerchantConfigLoader {
     private static Properties loadProperties() {
         Properties properties = new Properties();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try (InputStream inputStream = classLoader.getResourceAsStream(PaymentGatewayConstants.CONFIG_FILE_NAME)) {
+        try (InputStream inputStream = classLoader.getResourceAsStream(OpenApiConstants.CONFIG_FILE_NAME)) {
             if (inputStream == null) {
-                throw new PaymentGatewayConfigException("Merchant config file not found: "
-                        + PaymentGatewayConstants.CONFIG_FILE_NAME);
+                throw new OpenApiConfigException("Merchant config file not found: "
+                        + OpenApiConstants.CONFIG_FILE_NAME);
             }
             properties.load(inputStream);
             return properties;
         } catch (IOException exception) {
-            throw new PaymentGatewayConfigException("Failed to load merchant config file: "
-                    + PaymentGatewayConstants.CONFIG_FILE_NAME, exception);
+            throw new OpenApiConfigException("Failed to load merchant config file: "
+                    + OpenApiConstants.CONFIG_FILE_NAME, exception);
         }
     }
 
@@ -91,7 +91,7 @@ public final class MerchantConfigLoader {
         if ("false".equalsIgnoreCase(value)) {
             return Boolean.FALSE;
         }
-        throw new PaymentGatewayConfigException("Merchant config " + key + " must be true or false");
+        throw new OpenApiConfigException("Merchant config " + key + " must be true or false");
     }
 
     private static String keyValue(Properties properties, String pathKey, String inlineKey) {
@@ -102,7 +102,7 @@ public final class MerchantConfigLoader {
 
     private static String requiredText(String value, String message) {
         if (value == null || value.trim().isEmpty()) {
-            throw new PaymentGatewayConfigException(message);
+            throw new OpenApiConfigException(message);
         }
         return value.trim();
     }

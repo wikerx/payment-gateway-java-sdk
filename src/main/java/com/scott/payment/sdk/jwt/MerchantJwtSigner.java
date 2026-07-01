@@ -1,7 +1,7 @@
 package com.scott.payment.sdk.jwt;
 
-import com.scott.payment.sdk.config.PaymentGatewayConstants;
-import com.scott.payment.sdk.exception.PaymentGatewayValidationException;
+import com.scott.payment.sdk.config.OpenApiConstants;
+import com.scott.payment.sdk.exception.OpenApiValidationException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +13,14 @@ import java.util.Collections;
 import java.util.Date;
 
 /**
- * 商户 JWT HS256 签名器，对齐后端 MerchantJwtVerifier 的固定 claim 约束。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : MerchantJwtSigner
+ * @date : 2026-07-01 11:08
+ * @email : scott_x@163.com
+ * @description : 商户 JWT HS256 签名器，负责按网关 MerchantJwtVerifier 约束生成 Bearer JWT。
+ *                本类不加密请求体、不发起 HTTP 请求、不修改资金或交易状态；签名密钥和生成后的 JWT 都属于敏感鉴权材料。
+ * @status : modify
  */
 public class MerchantJwtSigner {
 
@@ -39,7 +46,7 @@ public class MerchantJwtSigner {
         Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         // 同时设置标准 audience 和 aud claim 数组，以兼容后端 MerchantJwtVerifier 的固定 claim 校验。
         return Jwts.builder()
-                .setHeaderParam(PaymentGatewayConstants.JWT_HEADER_TYPE, PaymentGatewayConstants.JWT_TYPE)
+                .setHeaderParam(OpenApiConstants.JWT_HEADER_TYPE, OpenApiConstants.JWT_TYPE)
                 .setAudience("gateway")
                 .setIssuer("merchant")
                 .setId(jwtId)
@@ -63,22 +70,22 @@ public class MerchantJwtSigner {
      */
     private void validate(String merchantId, String secret, Boolean livemode, String jwtId, long ttlSeconds) {
         if (StringUtils.isBlank(merchantId)) {
-            throw new PaymentGatewayValidationException("merchantId can not be blank");
+            throw new OpenApiValidationException("merchantId can not be blank");
         }
         if (StringUtils.isBlank(secret)) {
-            throw new PaymentGatewayValidationException("merchant jwt secret can not be blank");
+            throw new OpenApiValidationException("merchant jwt secret can not be blank");
         }
         if (secret.getBytes(StandardCharsets.UTF_8).length < HS256_MIN_SECRET_BYTES) {
-            throw new PaymentGatewayValidationException("merchant jwt secret must be at least 256 bits for HS256");
+            throw new OpenApiValidationException("merchant jwt secret must be at least 256 bits for HS256");
         }
         if (livemode == null) {
-            throw new PaymentGatewayValidationException("livemode can not be null");
+            throw new OpenApiValidationException("livemode can not be null");
         }
         if (StringUtils.isBlank(jwtId)) {
-            throw new PaymentGatewayValidationException("jwt jti can not be blank");
+            throw new OpenApiValidationException("jwt jti can not be blank");
         }
-        if (ttlSeconds <= 0 || ttlSeconds > PaymentGatewayConstants.JWT_TTL_SECONDS) {
-            throw new PaymentGatewayValidationException("jwt ttlSeconds must be between 1 and " + PaymentGatewayConstants.JWT_TTL_SECONDS);
+        if (ttlSeconds <= 0 || ttlSeconds > OpenApiConstants.JWT_TTL_SECONDS) {
+            throw new OpenApiValidationException("jwt ttlSeconds must be between 1 and " + OpenApiConstants.JWT_TTL_SECONDS);
         }
     }
 }

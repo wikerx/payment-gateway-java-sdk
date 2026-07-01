@@ -1,10 +1,10 @@
 package com.scott.payment.sdk.client;
 
-import com.scott.payment.sdk.PaymentGatewayClient;
-import com.scott.payment.sdk.PaymentGatewayResult;
+import com.scott.payment.sdk.OpenApiClient;
+import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
-import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
-import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
+import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -28,18 +28,20 @@ class PaymentRetrieveTest {
      * 验证检索代收交易接口使用 GET、Bearer JWT 且不发送请求体。
      */
     @Test
-    void retrievePayment() {
-        CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
-        PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
+    void retrievePayment_shouldSuccess() {
+        CapturingOpenApiTransport transport = new CapturingOpenApiTransport();
+        OpenApiClient client = new OpenApiClient(OpenApiTestSupport.clientConfig(), transport);
 
-        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        log.info("用例开始: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "PaymentRetrieveTest",
+                "apiName", "Payment Retrieve",
                 "tradeNo", "pay_123")));
-        PaymentGatewayResult<PaymentResponse> result = client.retrievePayment("pay_123");
-        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        OpenApiResult<PaymentResponse> result = client.retrievePayment("pay_123");
+        log.info("用例结果: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "PaymentRetrieveTest",
+                "apiName", "Payment Retrieve",
                 "success", result.isSuccess(),
-                "tradeNo", result.getData().getTradeNo(),
+                "data", result.getData(),
                 "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");

@@ -1,10 +1,10 @@
 package com.scott.payment.sdk.client;
 
-import com.scott.payment.sdk.PaymentGatewayClient;
-import com.scott.payment.sdk.PaymentGatewayResult;
+import com.scott.payment.sdk.OpenApiClient;
+import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
-import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
-import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.testkit.CapturingOpenApiTransport;
+import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -30,20 +30,21 @@ class FundAccountsBalanceInquiryTest {
      * 验证检索余额接口按币种查询并解析加密列表响应。
      */
     @Test
-    void retrieveUsdBalance() {
-        CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
-        PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
+    void fundAccountsBalanceInquiry_shouldSuccess() {
+        CapturingOpenApiTransport transport = new CapturingOpenApiTransport();
+        OpenApiClient client = new OpenApiClient(OpenApiTestSupport.clientConfig(), transport);
 
-        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        log.info("用例开始: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "FundAccountsBalanceInquiryTest",
-                "merchantId", PaymentGatewayTestSupport.merchantId(),
+                "apiName", "Fund Accounts Balance Inquiry",
+                "merchantId", OpenApiTestSupport.merchantId(),
                 "currency", "USD")));
-        PaymentGatewayResult<List<BalanceResponse>> result = client.retrieveBalances("USD");
-        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+        OpenApiResult<List<BalanceResponse>> result = client.retrieveBalances("USD");
+        log.info("用例结果: {}", JsonSupport.toJson(OpenApiTestSupport.logFields(
                 "caseName", "FundAccountsBalanceInquiryTest",
+                "apiName", "Fund Accounts Balance Inquiry",
                 "success", result.isSuccess(),
-                "dataSize", result.getData().size(),
-                "firstCurrency", result.getData().get(0).getCurrency())));
+                "data", result.getData())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/fund/accounts/get");
