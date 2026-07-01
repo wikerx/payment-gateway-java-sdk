@@ -6,6 +6,7 @@ import com.scott.payment.sdk.model.refund.RefundCreateRequest;
 import com.scott.payment.sdk.model.refund.RefundResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : 创建退款接口商户调用 case，演示按原代收交易号、币种、原金额和退款金额提交退款申请。
- *                本 case 涉及资金反向状态流转和 OpenAPI 请求加密，只输出金额摘要和交易号，不输出密钥或完整请求明文。
+ *                本 case 涉及资金反向状态流转和 OpenAPI 请求加密，开启原始日志后会输出请求明文、密文 data 和解密响应，便于商户核验。
  * @status : create
  */
 @Slf4j
@@ -38,11 +39,17 @@ class RefundCreateTest {
         request.setRefundAmount(PaymentGatewayTestSupport.amount("12.34"));
         request.setRefundReason("Customer request");
 
-        log.info("创建退款 case 开始：tradeNo={} currency={} refundAmount={}",
-                request.getTradeNo(), request.getCurrency(), request.getRefundAmount());
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "RefundCreateTest",
+                "tradeNo", request.getTradeNo(),
+                "currency", request.getCurrency(),
+                "refundAmount", request.getRefundAmount())));
         PaymentGatewayResult<RefundResponse> result = client.createRefund(request);
-        log.info("创建退款 case 结果：success={} tradeNo={} requestPath={}",
-                result.isSuccess(), result.getData().getTradeNo(), transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "RefundCreateTest",
+                "success", result.isSuccess(),
+                "tradeNo", result.getData().getTradeNo(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/refund");
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");

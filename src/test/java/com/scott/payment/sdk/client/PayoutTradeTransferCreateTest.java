@@ -2,12 +2,12 @@ package com.scott.payment.sdk.client;
 
 import com.scott.payment.sdk.PaymentGatewayClient;
 import com.scott.payment.sdk.PaymentGatewayResult;
-import com.scott.payment.sdk.logging.PaymentGatewayLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
 import com.scott.payment.sdk.model.payout.PayoutCreateRequest;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -39,18 +39,20 @@ class PayoutTradeTransferCreateTest {
         PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
         PayoutCreateRequest request = payoutCreateRequest();
 
-        log.info("代付申请 case 开始：merchantId={} orderNo={} currency={} amount={} paymentMethod={} cardNumberLength={}",
-                PaymentGatewayLogSanitizer.maskMerchantId(PaymentGatewayTestSupport.merchantId()),
-                request.getOrderNo(),
-                request.getCurrency(),
-                request.getAmount(),
-                request.getPaymentMethod(),
-                request.getPaymentMethodData().get("number").toString().length());
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferCreateTest",
+                "merchantId", PaymentGatewayTestSupport.merchantId(),
+                "orderNo", request.getOrderNo(),
+                "currency", request.getCurrency(),
+                "amount", request.getAmount(),
+                "paymentMethod", request.getPaymentMethod(),
+                "cardNumberLength", request.getPaymentMethodData().get("number").toString().length())));
         PaymentGatewayResult<PayoutResponse> result = client.createPayout(request);
-        log.info("代付申请 case 结果：success={} requestPath={} responseTradeNo={}",
-                result.isSuccess(),
-                transport.getLastRequest().getUri().getPath(),
-                result.getData().getTradeNo());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferCreateTest",
+                "success", result.isSuccess(),
+                "requestPath", transport.getLastRequest().getUri().getPath(),
+                "responseTradeNo", result.getData().getTradeNo())));
 
         String requestBody = transport.getLastRequest().getBody();
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("POST");

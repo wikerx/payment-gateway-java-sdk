@@ -2,10 +2,10 @@ package com.scott.payment.sdk.client;
 
 import com.scott.payment.sdk.PaymentGatewayClient;
 import com.scott.payment.sdk.PaymentGatewayResult;
-import com.scott.payment.sdk.logging.PaymentGatewayLogSanitizer;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -34,11 +34,16 @@ class FundAccountsBalanceInquiryTest {
         CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
         PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
 
-        log.info("检索余额 case 开始：merchantId={} currency=USD",
-                PaymentGatewayLogSanitizer.maskMerchantId(PaymentGatewayTestSupport.merchantId()));
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "FundAccountsBalanceInquiryTest",
+                "merchantId", PaymentGatewayTestSupport.merchantId(),
+                "currency", "USD")));
         PaymentGatewayResult<List<BalanceResponse>> result = client.retrieveBalances("USD");
-        log.info("检索余额 case 结果：success={} dataSize={} firstCurrency={}",
-                result.isSuccess(), result.getData().size(), result.getData().get(0).getCurrency());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "FundAccountsBalanceInquiryTest",
+                "success", result.isSuccess(),
+                "dataSize", result.getData().size(),
+                "firstCurrency", result.getData().get(0).getCurrency())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/fund/accounts/get");

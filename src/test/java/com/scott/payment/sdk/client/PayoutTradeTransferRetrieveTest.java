@@ -2,10 +2,10 @@ package com.scott.payment.sdk.client;
 
 import com.scott.payment.sdk.PaymentGatewayClient;
 import com.scott.payment.sdk.PaymentGatewayResult;
-import com.scott.payment.sdk.logging.PaymentGatewayLogSanitizer;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -42,13 +42,15 @@ class PayoutTradeTransferRetrieveTest {
         CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
         PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
 
-        log.info("检索代付交易 case 开始：merchantId={} tradeNo={}",
-                PaymentGatewayLogSanitizer.maskMerchantId(PaymentGatewayTestSupport.merchantId()),
-                TRADE_NO);
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferRetrieveTest",
+                "merchantId", PaymentGatewayTestSupport.merchantId(),
+                "tradeNo", TRADE_NO)));
         PaymentGatewayResult<PayoutResponse> result = client.retrievePayout(TRADE_NO);
-        log.info("检索代付交易 case 结果：success={} requestPath={}",
-                result.isSuccess(),
-                transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferRetrieveTest",
+                "success", result.isSuccess(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
         assertThat(transport.getLastRequest().getUri().getPath())

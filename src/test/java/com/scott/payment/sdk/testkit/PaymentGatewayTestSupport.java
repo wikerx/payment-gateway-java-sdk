@@ -4,6 +4,8 @@ import com.scott.payment.sdk.PaymentGatewayClientConfig;
 import com.scott.payment.sdk.config.MerchantConfigLoader;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author : scott
@@ -12,7 +14,7 @@ import java.math.BigDecimal;
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : SDK 测试支撑工具，负责加载 2606177036 沙盒商户配置并提供金额构造等测试辅助方法。
- *                本类不新增数据库测试数据，不发起真实外部渠道调用；返回的 API 密钥仅用于本地构造 JWT，测试日志不得输出密钥明文。
+ *                本类不新增数据库测试数据，不发起真实外部渠道调用；返回的 API 密钥仅用于本地构造 JWT。
  * @status : modify
  */
 public final class PaymentGatewayTestSupport {
@@ -64,5 +66,19 @@ public final class PaymentGatewayTestSupport {
      */
     public static BigDecimal amount(String value) {
         return new BigDecimal(value);
+    }
+
+    /**
+     * 构造测试日志字段。
+     *
+     * @param keyValues 按 key、value 交替传入的日志字段
+     * @return 保持插入顺序的日志字段 Map，不包含密钥明文
+     */
+    public static Map<String, Object> logFields(Object... keyValues) {
+        Map<String, Object> fields = new LinkedHashMap<String, Object>();
+        for (int index = 0; index + 1 < keyValues.length; index += 2) {
+            fields.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+        }
+        return fields;
     }
 }

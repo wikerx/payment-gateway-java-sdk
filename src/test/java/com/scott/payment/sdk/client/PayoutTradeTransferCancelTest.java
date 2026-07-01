@@ -2,11 +2,11 @@ package com.scott.payment.sdk.client;
 
 import com.scott.payment.sdk.PaymentGatewayClient;
 import com.scott.payment.sdk.PaymentGatewayResult;
-import com.scott.payment.sdk.logging.PaymentGatewayLogSanitizer;
 import com.scott.payment.sdk.model.payout.PayoutCancelRequest;
 import com.scott.payment.sdk.model.payout.PayoutCancelResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -47,14 +47,16 @@ class PayoutTradeTransferCancelTest {
         request.setTradeNo(TRADE_NO);
         request.setRemark("取消代付申请");
 
-        log.info("代付取消申请 case 开始：merchantId={} tradeNo={} remarkLength={}",
-                PaymentGatewayLogSanitizer.maskMerchantId(PaymentGatewayTestSupport.merchantId()),
-                request.getTradeNo(),
-                request.getRemark().length());
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferCancelTest",
+                "merchantId", PaymentGatewayTestSupport.merchantId(),
+                "tradeNo", request.getTradeNo(),
+                "remarkLength", request.getRemark().length())));
         PaymentGatewayResult<PayoutCancelResponse> result = client.cancelPayout(request);
-        log.info("代付取消申请 case 结果：success={} requestPath={}",
-                result.isSuccess(),
-                transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PayoutTradeTransferCancelTest",
+                "success", result.isSuccess(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         String requestBody = transport.getLastRequest().getBody();
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("POST");

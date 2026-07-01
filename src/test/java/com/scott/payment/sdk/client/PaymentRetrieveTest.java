@@ -5,6 +5,7 @@ import com.scott.payment.sdk.PaymentGatewayResult;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -31,10 +32,15 @@ class PaymentRetrieveTest {
         CapturingPaymentGatewayTransport transport = new CapturingPaymentGatewayTransport();
         PaymentGatewayClient client = new PaymentGatewayClient(PaymentGatewayTestSupport.clientConfig(), transport);
 
-        log.info("检索代收交易 case 开始：tradeNo=pay_123");
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PaymentRetrieveTest",
+                "tradeNo", "pay_123")));
         PaymentGatewayResult<PaymentResponse> result = client.retrievePayment("pay_123");
-        log.info("检索代收交易 case 结果：success={} tradeNo={} requestPath={}",
-                result.isSuccess(), result.getData().getTradeNo(), transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "PaymentRetrieveTest",
+                "success", result.isSuccess(),
+                "tradeNo", result.getData().getTradeNo(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getMethod()).isEqualTo("GET");
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/payment/pay_123");

@@ -6,6 +6,7 @@ import com.scott.payment.sdk.model.payment.CheckoutPaymentRequest;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : 收银台代收创建接口商户调用 case，演示订单号、币种、金额、回跳地址和通知地址的组装方式。
- *                本 case 涉及资金交易创建和 OpenAPI 请求加密，只验证 SDK 是否发送 Bearer JWT 与密文 data，不输出完整 JWT、密钥或请求明文。
+ *                本 case 涉及资金交易创建和 OpenAPI 请求加密，开启原始日志后会输出完整 JWT、请求明文、密文 data 和解密响应，便于商户核验。
  * @status : create
  */
 @Slf4j
@@ -39,11 +40,17 @@ class CheckoutPaymentCreateTest {
         request.setNotifyUrl("https://merchant.example.com/notify");
         request.setPaymentMethod("CHECKOUT");
 
-        log.info("收银台代收创建 case 开始：orderNo={} currency={} amount={}",
-                request.getOrderNo(), request.getCurrency(), request.getAmount());
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "CheckoutPaymentCreateTest",
+                "orderNo", request.getOrderNo(),
+                "currency", request.getCurrency(),
+                "amount", request.getAmount())));
         PaymentGatewayResult<PaymentResponse> result = client.createCheckoutPayment(request);
-        log.info("收银台代收创建 case 结果：success={} tradeNo={} requestPath={}",
-                result.isSuccess(), result.getData().getTradeNo(), transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "CheckoutPaymentCreateTest",
+                "success", result.isSuccess(),
+                "tradeNo", result.getData().getTradeNo(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/trade/payment");
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");

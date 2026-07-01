@@ -6,6 +6,7 @@ import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.testkit.CapturingPaymentGatewayTransport;
 import com.scott.payment.sdk.testkit.PaymentGatewayTestSupport;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -38,10 +39,16 @@ class CustomerCreateTest {
         request.setPhone("+12025550123");
         request.setCountry("US");
 
-        log.info("创建客户 case 开始：country={} emailDomain=example.com", request.getCountry());
+        log.info("用例开始: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "CustomerCreateTest",
+                "country", request.getCountry(),
+                "emailDomain", "example.com")));
         PaymentGatewayResult<CustomerResponse> result = client.createCustomer(request);
-        log.info("创建客户 case 结果：success={} customerId={} requestPath={}",
-                result.isSuccess(), result.getData().getCustomerId(), transport.getLastRequest().getUri().getPath());
+        log.info("用例结果: {}", JsonSupport.toJson(PaymentGatewayTestSupport.logFields(
+                "caseName", "CustomerCreateTest",
+                "success", result.isSuccess(),
+                "customerId", result.getData().getCustomerId(),
+                "requestPath", transport.getLastRequest().getUri().getPath())));
 
         assertThat(transport.getLastRequest().getUri().getPath()).isEqualTo("/pay-api/mer/customers");
         assertThat(transport.getLastRequest().getHeaders().get("Authorization")).startsWith("Bearer ");

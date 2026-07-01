@@ -2,6 +2,7 @@ package com.scott.payment.sdk.http;
 
 import com.scott.payment.sdk.exception.PaymentGatewayHttpException;
 import com.scott.payment.sdk.config.PaymentGatewayConstants;
+import com.scott.payment.sdk.json.JsonSupport;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
@@ -11,6 +12,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,11 +52,11 @@ public class Jdk8HttpTransport implements HttpTransport {
                     && statusCode < PaymentGatewayConstants.HTTP_STATUS_SUCCESS_MAX_EXCLUSIVE
                     ? connection.getInputStream()
                     : connection.getErrorStream());
-            log.debug("event=payment_gateway_sdk_http_completed method={} path={} statusCode={} elapsedMillis={}",
-                    method,
-                    request.getUri().getPath(),
-                    statusCode,
-                    System.currentTimeMillis() - startMillis);
+            log.debug("HTTP请求完成: {}", JsonSupport.toJson(logFields(
+                    "method", method,
+                    "path", request.getUri().getPath(),
+                    "statusCode", statusCode,
+                    "elapsedMillis", System.currentTimeMillis() - startMillis)));
             return SdkHttpResponse.builder()
                     .statusCode(statusCode)
                     .headers(flattenHeaders(connection.getHeaderFields()))
@@ -104,5 +106,13 @@ public class Jdk8HttpTransport implements HttpTransport {
             }
         }
         return result;
+    }
+
+    private static Map<String, Object> logFields(Object... keyValues) {
+        Map<String, Object> fields = new LinkedHashMap<String, Object>();
+        for (int index = 0; index + 1 < keyValues.length; index += 2) {
+            fields.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+        }
+        return fields;
     }
 }

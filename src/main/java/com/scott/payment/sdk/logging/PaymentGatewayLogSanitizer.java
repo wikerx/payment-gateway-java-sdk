@@ -1,7 +1,5 @@
 package com.scott.payment.sdk.logging;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,28 +9,23 @@ import java.util.Map;
  * @classname : PaymentGatewayLogSanitizer
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
- * @description : OpenAPI SDK 日志脱敏工具，负责对商户号、JWT、API 密钥、卡号、CVV、账户号、请求体和响应体日志做摘要化处理。
- *                本类不参与请求签名、加密、资金处理或外部渠道调用，只服务于日志安全；敏感数据只允许输出脱敏片段、长度或是否包含加密 data 的摘要。
+ * @description : OpenAPI SDK 日志辅助工具，负责按商户联调要求输出 Header 副本、卡号脱敏值和 body 摘要。
+ *                本类不参与请求签名、加密、资金处理或外部渠道调用；除卡号外，商户号、JWT、账户号和业务字段默认按原值输出，便于沙盒文档核验。
  * @status : modify
  */
 public final class PaymentGatewayLogSanitizer {
-
-    /**
-     * 账号脱敏保留后缀长度。
-     */
-    private static final int ACCOUNT_SUFFIX_LENGTH = 4;
 
     private PaymentGatewayLogSanitizer() {
     }
 
     /**
-     * 脱敏商户号，保留前三位和后三位。
+     * 返回商户号原值。
      *
      * @param merchantId 商户号
-     * @return 脱敏后的商户号
+     * @return 原始商户号
      */
     public static String maskMerchantId(String merchantId) {
-        return maskMiddle(merchantId, 3, 3, "***");
+        return merchantId;
     }
 
     /**
@@ -46,50 +39,42 @@ public final class PaymentGatewayLogSanitizer {
     }
 
     /**
-     * 脱敏账户号，仅保留后四位。
+     * 返回账户号原值。
      *
      * @param accountNo 账户号
-     * @return 脱敏后的账户号
+     * @return 原始账户号
      */
     public static String maskAccountNo(String accountNo) {
-        if (StringUtils.isBlank(accountNo)) {
-            return "";
-        }
-        String text = accountNo.trim();
-        if (text.length() <= ACCOUNT_SUFFIX_LENGTH) {
-            return "****";
-        }
-        return repeat('*', text.length() - ACCOUNT_SUFFIX_LENGTH)
-                + text.substring(text.length() - ACCOUNT_SUFFIX_LENGTH);
+        return accountNo;
     }
 
     /**
-     * 脱敏 token，仅保留前六位和后四位。
+     * 返回 token 原值。
      *
      * @param token token 文本
-     * @return 脱敏后的 token
+     * @return 原始 token
      */
     public static String maskToken(String token) {
-        return maskMiddle(token, 6, 4, "******");
+        return token;
     }
 
     /**
-     * 脱敏密钥，仅保留前六位和后四位。
+     * 返回密钥原值。
      *
      * @param key 密钥文本
-     * @return 脱敏后的密钥
+     * @return 原始密钥
      */
     public static String maskKey(String key) {
-        return maskMiddle(key, 6, 4, "******");
+        return key;
     }
 
     /**
-     * 脱敏 HTTP Header。
+     * 复制 HTTP Header。
      *
-     * 该方法仅用于日志输出，不修改真实请求 Header；Authorization 中的 Bearer JWT 或历史 Payment token 只保留前缀和脱敏摘要。
+     * 该方法仅用于日志输出，不修改真实请求 Header；Authorization 按原值输出，便于商户核验签名和 JWT 内容。
      *
      * @param headers 原始 HTTP Header
-     * @return 可安全输出到日志的 Header 副本
+     * @return Header 副本
      */
     public static Map<String, String> sanitizeHeaders(Map<String, String> headers) {
         Map<String, String> sanitized = new LinkedHashMap<String, String>();
@@ -99,11 +84,7 @@ public final class PaymentGatewayLogSanitizer {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            if ("Authorization".equalsIgnoreCase(key)) {
-                sanitized.put(key, maskAuthorization(value));
-            } else {
-                sanitized.put(key, value);
-            }
+            sanitized.put(key, value);
         }
         return sanitized;
     }
@@ -123,22 +104,8 @@ public final class PaymentGatewayLogSanitizer {
         return "length=" + body.length() + ", encryptedData=" + body.contains("\"data\"");
     }
 
-    private static String maskAuthorization(String authorization) {
-        if (StringUtils.isBlank(authorization)) {
-            return "";
-        }
-        String text = authorization.trim();
-        int splitIndex = text.indexOf(' ');
-        if (splitIndex < 0) {
-            return maskToken(text);
-        }
-        String prefix = text.substring(0, splitIndex + 1);
-        String token = text.substring(splitIndex + 1);
-        return prefix + maskToken(token);
-    }
-
     private static String maskMiddle(String value, int prefixLength, int suffixLength, String mask) {
-        if (StringUtils.isBlank(value)) {
+        if (value == null || value.trim().isEmpty()) {
             return "";
         }
         String text = value.trim();

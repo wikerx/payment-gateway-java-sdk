@@ -57,7 +57,7 @@ import java.util.UUID;
  * @email : scott_x@163.com
  * @description : 商户支付网关 Java SDK 客户端，负责请求签名、请求加密、响应解密、HTTP 调用和基础参数校验。
  *                本类不负责商户业务幂等落库、资金状态流转或渠道回调处理；支付、退款、代付、余额和客户等商户 OpenAPI 请求会按服务端最新协议使用 Bearer JWT 与 JWE data。
- *                配置中包含 API 私钥、平台请求公钥和商户响应私钥，属于敏感材料，日志只能输出脱敏商户号、请求 ID 和必要摘要。
+ *                配置中包含 API 私钥、平台请求公钥和商户响应私钥；沙盒联调开启原始日志后会输出完整 Header、明文请求、密文请求、密文响应和解密响应。
  * @status : create
  */
 @Slf4j
@@ -316,7 +316,7 @@ public class PaymentGatewayClient {
      */
     public PaymentGatewayResult<List<BalanceResponse>> retrieveBalances(String currency) {
         String path = PaymentGatewayConstants.BALANCE_RETRIEVE_PATH + "?currency=" + encodeQuery(requireText(currency, "currency"));
-        log.warn("retrieveBalances: {}", path);
+        logValue("检索余额请求地址", path);
         return getListSecured(path, BalanceResponse.class, "balance-" + UUID.randomUUID());
     }
 
@@ -482,12 +482,14 @@ public class PaymentGatewayClient {
         long startMillis = System.currentTimeMillis();
         URI requestUri = resolveUri(path);
         Map<String, String> requestHeaders = headers(jwtId, requestId, body != null, authorizationMode);
-        log.info("event=payment_gateway_sdk_request_start method={} path={} merchantId={} requestId={}",
-                method,
-                path,
-                PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
-                requestId);
-        log.info("requestBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(body));
+        logJson("请求开始", logFields(
+                "method", method,
+                "path", path,
+                "merchantId", config.getMerchantId(),
+                "requestId", requestId));
+        logJson("请求参数摘要", logFields(
+                "requestId", requestId,
+                "summary", PaymentGatewayLogSanitizer.bodySummary(body)));
         logRawPlainRequest(method, requestUri, plainBody, requestId);
         logRawRequest(method, requestUri, requestHeaders, body, requestId);
         try {
@@ -501,34 +503,39 @@ public class PaymentGatewayClient {
                     .build());
             if (response.getStatusCode() < PaymentGatewayConstants.HTTP_STATUS_SUCCESS_MIN
                     || response.getStatusCode() >= PaymentGatewayConstants.HTTP_STATUS_SUCCESS_MAX_EXCLUSIVE) {
-                log.warn("event=payment_gateway_sdk_request_end method={} path={} merchantId={} requestId={} statusCode={} elapsedMillis={} success=false",
-                        method,
-                        path,
-                        PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
-                        requestId,
-                        response.getStatusCode(),
-                        System.currentTimeMillis() - startMillis);
+                log.warn("请求结束: {}", JsonSupport.toJson(logFields(
+                        "method", method,
+                        "path", path,
+                        "merchantId", config.getMerchantId(),
+                        "requestId", requestId,
+                        "statusCode", response.getStatusCode(),
+                        "elapsedMillis", System.currentTimeMillis() - startMillis,
+                        "success", false)));
                 throw new PaymentGatewayHttpException("Payment Gateway HTTP status is not successful: " + response.getStatusCode());
             }
-            log.info("event=payment_gateway_sdk_request_end method={} path={} merchantId={} requestId={} statusCode={} elapsedMillis={} success=true",
-                    method,
-                    path,
-                    PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
-                    requestId,
-                    response.getStatusCode(),
-                    System.currentTimeMillis() - startMillis);
-            log.info("responseBodySummary={}", PaymentGatewayLogSanitizer.bodySummary(response.getBody()));
+            logJson("请求结束", logFields(
+                    "method", method,
+                    "path", path,
+                    "merchantId", config.getMerchantId(),
+                    "requestId", requestId,
+                    "statusCode", response.getStatusCode(),
+                    "elapsedMillis", System.currentTimeMillis() - startMillis,
+                    "success", true));
+            logJson("响应参数摘要", logFields(
+                    "requestId", requestId,
+                    "summary", PaymentGatewayLogSanitizer.bodySummary(response.getBody())));
             logRawResponse(response, requestId);
             return JsonSupport.fromJson(response.getBody(), new TypeReference<PaymentGatewayResult<JsonNode>>() {
             });
         } catch (RuntimeException exception) {
-            log.warn("event=payment_gateway_sdk_request_error method={} path={} merchantId={} requestId={} elapsedMillis={} errorType={} message=\"Payment Gateway request failed\"",
-                    method,
-                    path,
-                    PaymentGatewayLogSanitizer.maskMerchantId(config.getMerchantId()),
-                    requestId,
-                    System.currentTimeMillis() - startMillis,
-                    exception.getClass().getSimpleName());
+            log.warn("请求异常: {}", JsonSupport.toJson(logFields(
+                    "method", method,
+                    "path", path,
+                    "merchantId", config.getMerchantId(),
+                    "requestId", requestId,
+                    "elapsedMillis", System.currentTimeMillis() - startMillis,
+                    "errorType", exception.getClass().getSimpleName(),
+                    "message", "Payment Gateway request failed")));
             throw exception;
         }
     }
@@ -537,11 +544,16 @@ public class PaymentGatewayClient {
         if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
             return;
         }
-        log.info("event=payment_gateway_sdk_raw_request requestId={} method={} url={}",
-                requestId, method, requestUri);
-        log.info("event=payment_gateway_sdk_raw_request_headers requestId={} headers={}",
-                requestId, JsonSupport.toJson(requestHeaders));
-        log.info("event=payment_gateway_sdk_raw_request_body requestId={} body={}", requestId, body);
+        logJson("请求地址", logFields(
+                "requestId", requestId,
+                "method", method,
+                "url", requestUri.toString()));
+        logJson("原始请求头", logFields(
+                "requestId", requestId,
+                "headers", requestHeaders));
+        logJson("请求参数加密", logFields(
+                "requestId", requestId,
+                "body", body));
         logEncryptedPayloadComponentsFromEnvelope("request", requestId, body);
     }
 
@@ -549,19 +561,22 @@ public class PaymentGatewayClient {
         if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
             return;
         }
-        log.info("event=payment_gateway_sdk_raw_plain_request_body requestId={} method={} url={} body={}",
-                requestId, method, requestUri, plainBody);
+        logJson("原始请求参数", logFields(
+                "requestId", requestId,
+                "method", method,
+                "url", requestUri.toString(),
+                "body", plainBody));
     }
 
     private void logRawResponse(SdkHttpResponse response, String requestId) {
         if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
             return;
         }
-        log.info("event=payment_gateway_sdk_raw_response requestId={} statusCode={} headers={} body={}",
-                requestId,
-                response.getStatusCode(),
-                JsonSupport.toJson(response.getHeaders()),
-                response.getBody());
+        logJson("原始响应参数", logFields(
+                "requestId", requestId,
+                "statusCode", response.getStatusCode(),
+                "headers", response.getHeaders(),
+                "body", response.getBody()));
         logEncryptedPayloadComponentsFromEnvelope("response", requestId, response.getBody());
     }
 
@@ -569,11 +584,11 @@ public class PaymentGatewayClient {
         if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled())) {
             return;
         }
-        log.info("event=payment_gateway_sdk_raw_plain_response_data data={}", dataJson);
+        logJson("响应参数解密", logFields("data", dataJson));
     }
 
     private void logEncryptedPayloadComponentsFromEnvelope(String direction, String requestId, String body) {
-        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled()) || !log.isDebugEnabled() || StringUtils.isBlank(body)) {
+        if (!Boolean.TRUE.equals(config.getRawHttpLogEnabled()) || StringUtils.isBlank(body)) {
             return;
         }
         try {
@@ -582,27 +597,31 @@ public class PaymentGatewayClient {
                 logEncryptedPayloadComponents(direction, requestId, dataNode.asText());
             }
         } catch (RuntimeException exception) {
-            log.debug("event=payment_gateway_sdk_encrypted_payload_components_skip direction={} requestId={} reason=body_parse_failed",
-                    direction, requestId);
+            logJson("加密参数拆分跳过", logFields(
+                    "direction", direction,
+                    "requestId", requestId,
+                    "reason", "body_parse_failed"));
         }
     }
 
     private void logEncryptedPayloadComponents(String direction, String requestId, String compactPayload) {
         Map<String, String> components = compactPayloadComponentsForLog(compactPayload);
         if (components.isEmpty()) {
-            log.debug("event=payment_gateway_sdk_encrypted_payload_components_skip direction={} requestId={} reason=invalid_compact_payload",
-                    direction, requestId);
+            logJson("加密参数拆分跳过", logFields(
+                    "direction", direction,
+                    "requestId", requestId,
+                    "reason", "invalid_compact_payload"));
             return;
         }
-        log.debug("event=payment_gateway_sdk_encrypted_payload_components direction={} requestId={} protectedHeader={} header={} encryptedAesKey={} iv={} cipherText={} tag={}",
-                direction,
-                requestId,
-                components.get(COMPACT_PROTECTED_HEADER),
-                components.get(COMPACT_HEADER),
-                components.get(COMPACT_ENCRYPTED_AES_KEY),
-                components.get(COMPACT_IV),
-                components.get(COMPACT_CIPHER_TEXT),
-                components.get(COMPACT_TAG));
+        logJson("加密参数拆分", logFields(
+                "direction", direction,
+                "requestId", requestId,
+                COMPACT_PROTECTED_HEADER, components.get(COMPACT_PROTECTED_HEADER),
+                COMPACT_HEADER, components.get(COMPACT_HEADER),
+                COMPACT_ENCRYPTED_AES_KEY, components.get(COMPACT_ENCRYPTED_AES_KEY),
+                COMPACT_IV, components.get(COMPACT_IV),
+                COMPACT_CIPHER_TEXT, components.get(COMPACT_CIPHER_TEXT),
+                COMPACT_TAG, components.get(COMPACT_TAG)));
     }
 
     static Map<String, String> compactPayloadComponentsForLog(String compactPayload) {
@@ -691,7 +710,10 @@ public class PaymentGatewayClient {
         if (withBody) {
             headers.put(PaymentGatewayConstants.HEADER_CONTENT_TYPE, PaymentGatewayConstants.CONTENT_TYPE);
         }
-        log.info("headers: {}", JsonSupport.toJson(PaymentGatewayLogSanitizer.sanitizeHeaders(headers)));
+        String headersJson = JsonSupport.toJson(PaymentGatewayLogSanitizer.sanitizeHeaders(headers));
+        log.info("请求头: {}", headersJson);
+        log.debug("请求头: {}", headersJson);
+
         return headers;
     }
 
@@ -710,6 +732,25 @@ public class PaymentGatewayClient {
                 now,
                 config.getJwtTtlSeconds());
         return PaymentGatewayConstants.AUTHORIZATION_PREFIX + token;
+    }
+
+    private void logValue(String name, Object value) {
+        log.info("{}: {}", name, value);
+        log.debug("{}: {}", name, value);
+    }
+
+    private void logJson(String name, Object value) {
+        String json = JsonSupport.toJson(value);
+        log.info("{}: {}", name, json);
+        log.debug("{}: {}", name, json);
+    }
+
+    private static Map<String, Object> logFields(Object... keyValues) {
+        Map<String, Object> fields = new LinkedHashMap<String, Object>();
+        for (int index = 0; index + 1 < keyValues.length; index += 2) {
+            fields.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+        }
+        return fields;
     }
 
     private URI resolveUri(String path) {

@@ -29,7 +29,7 @@ public class SdkHttpRequest {
     private URI uri;
 
     /**
-     * HTTP 请求头。不得在日志中输出 authorization 或密文 data。
+     * HTTP 请求头。开启原始日志后会按原值输出，用于商户核验 Authorization、User-Agent 和请求追踪号。
      */
     @ToString.Exclude
     private Map<String, String> headers;

@@ -14,7 +14,7 @@ import java.util.Properties;
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
  * @description : 商户配置加载器，负责从 classpath 固定读取 merchant-config.properties，并封装为 SDK 运行配置。
- *                本类不支持按商户号动态切换配置文件，避免商户示例项目中混入多套测试商户数据；密钥字段只加载到内存，不输出到日志。
+ *                本类不支持按商户号动态切换配置文件，避免商户示例项目中混入多套测试商户数据；密钥字段只加载到内存，是否输出由调用方日志开关控制。
  * @status : modify
  */
 public final class MerchantConfigLoader {
