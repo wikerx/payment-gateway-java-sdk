@@ -206,4 +206,19 @@ public final class OpenApiConstants {
      * 客户查询接口路径模板。
      */
     public static final String CUSTOMER_RETRIEVE_PATH = "/pay-api/mer/customers/%s";
+
+    /**
+     * 客户更新接口路径模板。
+     */
+    public static final String CUSTOMER_UPDATE_PATH = "/pay-api/mer/customers/%s";
+
+    /**
+     * 客户删除接口路径模板。
+     */
+    public static final String CUSTOMER_DELETE_PATH = "/pay-api/mer/customers/%s";
+
+    /**
+     * 客户列表接口路径。
+     */
+    public static final String CUSTOMER_LIST_PATH = "/pay-api/mer/customers";
 }

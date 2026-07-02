@@ -23,6 +23,7 @@ import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
+import com.scott.payment.sdk.model.customer.CustomerUpdateRequest;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
 import com.scott.payment.sdk.model.payment.CheckoutPaymentRequest;
 import com.scott.payment.sdk.model.payment.LocalPaymentRequest;
@@ -367,7 +368,7 @@ public class OpenApiClient {
     public OpenApiResult<CustomerResponse> createCustomer(CustomerCreateRequest request) {
         validateCustomerCreateRequest(request);
         String jti = uniqueJwtId("CUSTOMER_CREATE_");
-        return postEncrypted(OpenApiEndpoint.CUSTOMER_CREATE, request, CustomerResponse.class, jti);
+        return sendEncrypted(OpenApiEndpoint.CUSTOMER_CREATE, request, CustomerResponse.class, jti);
     }
 
     /**
@@ -387,6 +388,56 @@ public class OpenApiClient {
     }
 
     /**
+     * 更新客户。
+     *
+     * 该方法通过 PUT + Bearer JWT + 加密 data 更新网关客户资料，路径中的 customerId 用于定位客户，请求体承载可更新的客户资料。
+     * 请求包含个人信息和证件号等敏感字段，SDK 只负责加密传输和日志脱敏；不负责商户本地客户资料同步、幂等落库、KYC 或外部渠道同步。
+     *
+     * @param customerId 客户 ID，来自创建客户或列表/检索客户接口响应
+     * @param request 客户更新请求
+     * @return 客户响应
+     */
+    public OpenApiResult<CustomerResponse> updateCustomer(String customerId, CustomerUpdateRequest request) {
+        validateCustomerUpdateRequest(request);
+        return sendEncrypted(OpenApiEndpoint.CUSTOMER_UPDATE,
+                OpenApiEndpoint.CUSTOMER_UPDATE.formatPath(encodePath(requireText(customerId, "customerId"))),
+                request,
+                CustomerResponse.class,
+                uniqueJwtId("CUSTOMER_UPDATE_"));
+    }
+
+    /**
+     * 删除客户。
+     *
+     * 该方法通过 DELETE + Bearer JWT 调用网关客户删除接口，不发送请求体。
+     * 删除客户只影响网关客户资料，不删除商户本地订单、交易、支付、退款、代付或对账记录；商户应自行处理本地幂等和审计。
+     *
+     * @param customerId 客户 ID，来自创建客户或列表/检索客户接口响应
+     * @return 客户删除响应，data=true 表示网关已受理删除
+     */
+    public OpenApiResult<Boolean> deleteCustomer(String customerId) {
+        return getSecured(OpenApiEndpoint.CUSTOMER_DELETE,
+                Boolean.class,
+                uniqueJwtId("CUSTOMER_DELETE_"),
+                encodePath(requireText(customerId, "customerId")));
+    }
+
+    /**
+     * 列出所有客户。
+     *
+     * 该方法通过 GET + Bearer JWT 调用客户列表接口，不发送请求体，响应 data 自动解密为客户列表。
+     * 返回内容可能包含个人信息，商户日志、导出和页面展示仍需按自身合规要求脱敏。
+     *
+     * @return 客户列表响应
+     */
+    public OpenApiResult<List<CustomerResponse>> listCustomers() {
+        return getListSecured(OpenApiEndpoint.CUSTOMER_LIST,
+                OpenApiEndpoint.CUSTOMER_LIST.getPath(),
+                CustomerResponse.class,
+                uniqueJwtId("CUSTOMER_LIST_"));
+    }
+
+    /**
      * 发送加密 POST 请求。
      *
      * 该方法是支付、代付、退款、客户创建等有请求体接口的统一入口，会先加密明文业务对象，再执行 HTTP 调用和响应解密。
@@ -403,10 +454,52 @@ public class OpenApiClient {
                                                       Object request,
                                                       Class<T> responseType,
                                                       String jwtId) {
+        return sendEncrypted(api, request, responseType, jwtId);
+    }
+
+    /**
+     * 发送带加密请求体的 OpenAPI 请求。
+     *
+     * 该方法支持 POST、PUT 等需要提交业务请求体的接口，会使用传入 API 的 HTTP 方法和默认 path。
+     * 请求可能包含金额、客户资料、卡信息等敏感字段，发送前统一封装为 livemode + data；本方法不处理商户侧业务幂等。
+     *
+     * @param api API 元数据，包含接口名称、HTTP 方法和路径
+     * @param request 明文请求对象
+     * @param responseType 响应 data 类型
+     * @param jwtId JWT jti，参与防重放
+     * @param <T> 响应 data 类型
+     * @return SDK 响应
+     */
+    private <T> OpenApiResult<T> sendEncrypted(OpenApiEndpoint api,
+                                               Object request,
+                                               Class<T> responseType,
+                                               String jwtId) {
+        return sendEncrypted(api, api.getPath(), request, responseType, jwtId);
+    }
+
+    /**
+     * 发送带加密请求体且允许覆盖路径的 OpenAPI 请求。
+     *
+     * 该方法用于 PUT /pay-api/mer/customers/{customerId} 等路径中含变量且请求体仍需加密的接口。
+     * path 必须由调用方完成路径参数编码；本方法只负责加密、HTTP 调用和响应解密。
+     *
+     * @param api API 元数据
+     * @param path 已格式化的接口路径
+     * @param request 明文请求对象
+     * @param responseType 响应 data 类型
+     * @param jwtId JWT jti
+     * @param <T> 响应 data 类型
+     * @return SDK 响应
+     */
+    private <T> OpenApiResult<T> sendEncrypted(OpenApiEndpoint api,
+                                               String path,
+                                               Object request,
+                                               Class<T> responseType,
+                                               String jwtId) {
         requireObject(request, "request");
         OpenApiEncryptedRequest encryptedRequest = encryptRequest(request);
         return execute(api,
-                api.getPath(),
+                path,
                 request,
                 encryptedRequest,
                 responseType,
@@ -1044,6 +1137,21 @@ public class OpenApiClient {
      */
     private void validateCustomerCreateRequest(CustomerCreateRequest request) {
         requireObject(request, "customer request");
+        requireText(request.getFirstname(), "firstname");
+        requireText(request.getLastname(), "lastname");
+        requireText(request.getEmail(), "email");
+        requireText(request.getCountry(), "country");
+    }
+
+    /**
+     * 校验客户更新请求的最小必填字段。
+     *
+     * 该校验只确认 SDK 能构造加密请求，不替代商户侧客户资料合规校验、KYC 或网关侧业务校验。
+     *
+     * @param request 客户更新请求
+     */
+    private void validateCustomerUpdateRequest(CustomerUpdateRequest request) {
+        requireObject(request, "customer update request");
         requireText(request.getFirstname(), "firstname");
         requireText(request.getLastname(), "lastname");
         requireText(request.getEmail(), "email");

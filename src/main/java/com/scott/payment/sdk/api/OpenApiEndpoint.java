@@ -66,7 +66,22 @@ public enum OpenApiEndpoint {
     /**
      * 检索客户，GET 请求，无请求体，响应 data 需要解密。
      */
-    CUSTOMER_RETRIEVE("Customer Retrieve", "GET", OpenApiConstants.CUSTOMER_RETRIEVE_PATH);
+    CUSTOMER_RETRIEVE("Customer Retrieve", "GET", OpenApiConstants.CUSTOMER_RETRIEVE_PATH),
+
+    /**
+     * 更新客户，PUT 请求，涉及客户资料变更，业务请求体需要加密。
+     */
+    CUSTOMER_UPDATE("Customer Update", "PUT", OpenApiConstants.CUSTOMER_UPDATE_PATH),
+
+    /**
+     * 删除客户，DELETE 请求，无请求体，响应 data 需要解密。
+     */
+    CUSTOMER_DELETE("Customer Delete", "DELETE", OpenApiConstants.CUSTOMER_DELETE_PATH),
+
+    /**
+     * 列出所有客户，GET 请求，无请求体，响应 data 需要解密为客户列表。
+     */
+    CUSTOMER_LIST("Customer List", "GET", OpenApiConstants.CUSTOMER_LIST_PATH);
 
     /**
      * API 展示名称，用于日志、测试 caseName 和商户文档。

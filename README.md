@@ -445,6 +445,9 @@ OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 | 查询余额 | `retrieveBalances` | GET | `/pay-api/fund/accounts/get` | 无 | 可传 `currency` query |
 | 创建客户 | `createCustomer` | POST | `/pay-api/mer/customers` | 加密 `livemode + data` | 涉及客户资料 |
 | 查询客户 | `retrieveCustomer` | GET | `/pay-api/mer/customers/{customerId}` | 无 | 响应可能包含个人信息 |
+| 更新客户 | `updateCustomer` | PUT | `/pay-api/mer/customers/{customerId}` | 加密 `livemode + data` | 会修改网关客户资料 |
+| 删除客户 | `deleteCustomer` | DELETE | `/pay-api/mer/customers/{customerId}` | 无 | 会删除网关客户资料 |
+| 列出客户 | `listCustomers` | GET | `/pay-api/mer/customers` | 无 | 响应可能包含个人信息列表 |
 
 ## 用例目录说明
 
@@ -459,11 +462,16 @@ OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 | `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferTest.java` | 是 | 真实创建沙盒代付交易，商户可直接参考完整调用方式 |
 | `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferInquiryTest.java` | 是 | 真实检索指定代付交易，商户可参考 GET 查询接口调用方式 |
 | `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferCancelTest.java` | 是 | 真实提交代付取消申请，商户可参考取消接口的加密 POST 调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/customers/CustomerCreateTest.java` | 是 | 真实创建沙盒客户资料，商户可参考客户创建参数 |
+| `src/test/java/com/scott/payment/sdk/api/customers/CustomerUpdateTest.java` | 是 | 真实创建前置客户并更新客户资料，商户可参考 PUT 加密调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/customers/CustomerRetrieveTest.java` | 是 | 真实创建前置客户并检索客户资料，商户可参考 GET 查询接口调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/customers/CustomerDeleteTest.java` | 是 | 真实创建前置客户并删除客户资料，商户可参考 DELETE 调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/customers/CustomerListTest.java` | 是 | 真实列出当前商户客户资料，商户可参考客户列表接口调用方式 |
 | `src/test/java/com/scott/payment/sdk/crypto/*ReferenceTest.java` | 否 | 演示 compact payload 加密、解密、五段拆分 |
 | `src/test/java/com/scott/payment/sdk/jwt/*ReferenceTest.java` | 否 | 演示 JWT、Authorization、POST/GET Header 生成 |
 | `src/test/java/com/scott/payment/sdk/api/webhook/**/*Test.java` | 否 | 演示 payin / payout 回调验签和 Controller 行为 |
 
-真实交易 case 会读取本地 `merchant-config.properties`，并请求 `payment.gateway.base-url`。参考 case 只适合商户学习 SDK 调用方式，不能证明网关环境已经连通。退款和取消类 case 会真实请求网关，如果目标交易未支付成功、已成功、已退款或进入不可变更状态，网关可能返回业务失败，这不代表 SDK 加密调用链路失败。
+真实交易和客户 case 会读取本地 `merchant-config.properties`，并请求 `payment.gateway.base-url`。参考 case 只适合商户学习 SDK 调用方式，不能证明网关环境已经连通。退款和取消类 case 会真实请求网关，如果目标交易未支付成功、已成功、已退款或进入不可变更状态，网关可能返回业务失败，这不代表 SDK 加密调用链路失败。客户更新、检索、删除 case 会先创建一个沙盒客户作为前置数据，方便商户直接运行单个 case。
 
 ## 异常
 
