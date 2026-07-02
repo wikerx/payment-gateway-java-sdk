@@ -1,5 +1,6 @@
 package com.scott.payment.sdk.payout;
 
+import com.apifan.common.random.source.InternetSource;
 import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.OpenApiResult;
@@ -79,8 +80,20 @@ public class PayoutTradeTransferTest {
 //        Option
         request.setMetadata("metadata");
 
-        request.setPaymentMethod(PaymentMethod.CASHAPP);
-        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
+//        request.setPaymentMethod(PaymentMethod.CASHAPP);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
+
+//        request.setPaymentMethod(PaymentMethod.CARD);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
+
+        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
+
+//        request.setPaymentMethod(PaymentMethod.UPI);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.UPI.getCode()));
+
+//        request.setPaymentMethod(PaymentMethod.ACH_DEBIT);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.ACH_DEBIT.getCode()));
         return request;
     }
 
@@ -116,14 +129,25 @@ public class PayoutTradeTransferTest {
     private Map<String, Object> cardPaymentMethodData(String method) {
 //        支付方式主体参数映射
         Map<String, Object> paymentMethodData = new HashMap<String, Object>();
-
+//        不同支付方式
         if(PaymentMethod.CASHAPP.getCode().equals(method)) {
             paymentMethodData.put("cashappAccount", "$123");
         } else if (PaymentMethod.CARD.getCode().equals(method)) {
-            paymentMethodData.put("number", "4242424242424242");
+            paymentMethodData.put("number", "4000056655665556");
             paymentMethodData.put("expMonth", "06");
-            paymentMethodData.put("expYear", "2026");
+            paymentMethodData.put("expYear", "2029");
             paymentMethodData.put("cvc", "123");
+        }else if (PaymentMethod.PAY_PAL.getCode().equals(method)) {
+            paymentMethodData.put("paypalEmail", InternetSource.getInstance().randomEmail(10));
+        }else if (PaymentMethod.UPI.getCode().equals(method)) {
+            paymentMethodData.put("bankName", "scott's bank");
+            paymentMethodData.put("bankCode", "641110");
+            paymentMethodData.put("cardNo", "6200000000000005");
+        }else if (PaymentMethod.ACH_DEBIT.getCode().equals(method)) {
+            paymentMethodData.put("accountNumber", "6205500000000000004");
+            paymentMethodData.put("routingNumber", "641110");
+        }else{
+            log.error("未知支付方式");
         }
 
         return paymentMethodData;

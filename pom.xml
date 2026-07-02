@@ -45,6 +45,7 @@
         <assertj.version>3.26.3</assertj.version>
         <logback.version>1.2.13</logback.version>
         <p3c-pmd.version>2.1.1</p3c-pmd.version>
+        <common-random.version>1.0.6</common-random.version>
         <maven.pmd.plugin.version>3.11.0</maven.pmd.plugin.version>
     </properties>
 
@@ -96,6 +97,11 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.apifan.common</groupId>
+            <artifactId>common-random</artifactId>
+            <version>${common-random.version}</version>
         </dependency>
 
         <dependency>
