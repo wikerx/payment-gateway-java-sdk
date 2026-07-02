@@ -1,4 +1,4 @@
-package com.scott.payment.sdk.payout;
+package com.scott.payment.sdk.api.payout;
 
 import com.apifan.common.random.source.InternetSource;
 import com.scott.payment.sdk.OpenApiClient;
@@ -15,17 +15,12 @@ import com.scott.payment.sdk.util.OrderNoGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * @author : scott
@@ -51,14 +46,22 @@ public class PayoutTradeTransferTest {
     @Test
     public void testPayoutTradeTransfer() {
         OpenApiClientConfig config = MerchantConfigLoader.load();
-        assumeTrue(isGatewayReachable(config.getBaseUri(), config.getConnectTimeoutMs()),
-                "测试网关不可达，已跳过真实代付申请调用: " + config.getBaseUrl());
         OpenApiClient client = new OpenApiClient(config);
         PayoutCreateRequest request = payoutCreateRequest();
 
         OpenApiResult<PayoutResponse> result = client.createPayout(request);
 
         log.info("代付申请真实调用-响应原始明文参数: {}", JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeObject(result)));
+        if (result != null && result.getData() != null) {
+            log.info("代付申请真实调用-交易状态映射: {}", JsonSupport.toLogJson(logFields(
+                    "status", result.getData().getStatus(),
+                    "responseCode", result.getData().getCode(),
+                    "responseMessage", result.getData().getMessage(),
+                    "statusEnum", result.getData().getStatusEnum().name(),
+                    "enumCode", result.getData().getStatusEnum().getCode(),
+                    "statusDescription", result.getData().getStatusEnum().getDescription(),
+                    "finalStatus", result.getData().getStatusEnum().isFinalStatus())));
+        }
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getData()).isNotNull();
@@ -90,11 +93,11 @@ public class PayoutTradeTransferTest {
 //        request.setPaymentMethod(PaymentMethod.CASHAPP);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
 
-//        request.setPaymentMethod(PaymentMethod.CARD);
-//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
+        request.setPaymentMethod(PaymentMethod.CARD);
+        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
 
-        request.setPaymentMethod(PaymentMethod.PAY_PAL);
-        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
+//        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
 
 //        request.setPaymentMethod(PaymentMethod.UPI);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.UPI.getCode()));
@@ -168,39 +171,4 @@ public class PayoutTradeTransferTest {
         return fields;
     }
 
-    /**
-     * 探测测试网关基础地址是否可建立 TCP 连接。
-     *
-     * 该方法只用于真实联调 case 的前置条件判断，不发送 OpenAPI 业务请求、不执行签名加密、不创建代付交易。
-     *
-     * @param baseUri merchant-config.properties 中配置的网关基础地址
-     * @param connectTimeoutMs 连接超时时间，单位毫秒
-     * @return true 表示网关端口可连接，false 表示当前环境不可执行真实 HTTP case
-     */
-    private boolean isGatewayReachable(URI baseUri, Integer connectTimeoutMs) {
-        String host = baseUri.getHost();
-        int port = baseUri.getPort();
-        if (host == null || port < 0) {
-            return false;
-        }
-        int timeout = connectTimeoutMs == null ? 1000 : Math.min(connectTimeoutMs, 1000);
-        Socket socket = new Socket();
-        try {
-            socket.connect(new InetSocketAddress(host, port), timeout);
-            return true;
-        } catch (IOException exception) {
-            log.warn("代付申请真实调用-测试网关不可达: {}", JsonSupport.toLogJson(logFields(
-                    "baseUrl", baseUri.toString(),
-                    "host", host,
-                    "port", port,
-                    "message", exception.getMessage())));
-            return false;
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException ignored) {
-                // 关闭探测 socket 失败不影响真实联调用例跳过判断。
-            }
-        }
-    }
 }

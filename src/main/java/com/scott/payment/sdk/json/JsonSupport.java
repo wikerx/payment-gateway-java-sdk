@@ -3,6 +3,7 @@ package com.scott.payment.sdk.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +26,7 @@ public final class JsonSupport {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
+            .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     /**
@@ -35,6 +37,7 @@ public final class JsonSupport {
     private static final ObjectMapper LOG_OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     private JsonSupport() {

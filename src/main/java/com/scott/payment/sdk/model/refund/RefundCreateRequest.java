@@ -5,13 +5,21 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * 退款创建请求。
+ * @author : scott
+ * @version : v1.0.0
+ * @classname : RefundCreateRequest
+ * @date : 2026-07-02 15:34
+ * @email : scott_x@163.com
+ * @description : 代收退款申请请求模型，负责承载商户退款订单号、原代收交易号、币种、原交易金额、退款金额和退款原因。
+ *                本类只描述请求字段，不执行 JWT 签名、OpenAPI 报文加密、HTTP 调用、退款幂等落库、资金回退或交易状态流转。
+ *                orderNo 是商户退款申请幂等和对账关键字段，tradeNo/charge 用于定位原代收交易，amount/refundAmount 涉及资金金额。
+ * @status : modify
  */
 @Data
 public class RefundCreateRequest {
 
     /**
-     * 退款标识符。
+     * 退款标识符，通常用于查询已经创建的退款。
      */
     private String charge;
     /**

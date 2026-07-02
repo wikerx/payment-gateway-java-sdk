@@ -3,6 +3,7 @@ package com.scott.payment.sdk.model.payment;
 import com.scott.payment.sdk.model.common.CustomerInfo;
 import com.scott.payment.sdk.model.common.DeviceInfo;
 import com.scott.payment.sdk.model.common.PaymentMethod;
+import com.scott.payment.sdk.model.common.PaymentType;
 import com.scott.payment.sdk.model.common.ProductInfo;
 import lombok.Data;
 import lombok.ToString;
@@ -151,5 +152,20 @@ public class PaymentCreateRequest {
             throw new IllegalArgumentException("paymentMethod can not be null");
         }
         this.paymentMethod = paymentMethod.getCode();
+    }
+
+    /**
+     * 使用支付类型枚举设置 payType。
+     *
+     * 该方法只把枚举 code 写入原有 Integer 字段，不改变 HTTP 字段名和 JSON 结构，兼容商户继续使用 setPayType(Integer)。
+     * 本方法不执行签名、加密、资金计算或状态流转。
+     *
+     * @param paymentType 支付类型枚举，不允许为空
+     */
+    public void setPayType(PaymentType paymentType) {
+        if (paymentType == null) {
+            throw new IllegalArgumentException("paymentType can not be null");
+        }
+        this.payType = paymentType.getCode();
     }
 }

@@ -1,4 +1,4 @@
-package com.scott.payment.sdk.payout;
+package com.scott.payment.sdk.api.payout;
 
 import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiClientConfig;
@@ -11,15 +11,10 @@ import com.scott.payment.sdk.model.payout.PayoutCancelResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * @author : scott
@@ -43,7 +38,7 @@ public class PayoutTradeTransferCancelTest {
      * 是否允许为空：否。
      * 用途：作为取消代付申请的交易定位字段，进入加密请求 data。
      */
-    private static final String TRADE_NO = "payout_202607021132012775210";
+    private static final String tradeNo = "payout_202607021532396969266";
 
     /**
      * 商户订单号，来自已调通的代付申请响应。
@@ -52,7 +47,7 @@ public class PayoutTradeTransferCancelTest {
      * 是否允许为空：否。
      * 用途：辅助网关定位商户订单，并用于商户联调核对日志。
      */
-    private static final String ORDER_NO = "PAYOUT_20260702113201042000";
+    private static final String orderNo = "PAYOUT_20260702153239394000";
 
     /**
      * 真实请求测试环境网关取消代付交易。
@@ -64,8 +59,6 @@ public class PayoutTradeTransferCancelTest {
     @Test
     public void testPayoutTradeTransferCancel() {
         OpenApiClientConfig config = MerchantConfigLoader.load();
-        assumeTrue(isGatewayReachable(config.getBaseUri(), config.getConnectTimeoutMs()),
-                "测试网关不可达，已跳过真实代付取消申请调用: " + config.getBaseUrl());
         OpenApiClient client = new OpenApiClient(config);
         PayoutCancelRequest request = payoutCancelRequest();
 
@@ -89,46 +82,10 @@ public class PayoutTradeTransferCancelTest {
      */
     private PayoutCancelRequest payoutCancelRequest() {
         PayoutCancelRequest request = new PayoutCancelRequest();
-        request.setTradeNo(TRADE_NO);
-        request.setOrderNo(ORDER_NO);
+        request.setTradeNo(tradeNo);
+        request.setOrderNo(orderNo);
         request.setRemark("SDK真实调用代付取消申请");
         return request;
-    }
-
-    /**
-     * 探测测试网关基础地址是否可建立 TCP 连接。
-     *
-     * 该方法只用于真实联调 case 的前置条件判断，不发送 OpenAPI 业务请求、不执行签名加密、不取消代付交易。
-     *
-     * @param baseUri merchant-config.properties 中配置的网关基础地址
-     * @param connectTimeoutMs 连接超时时间，单位毫秒
-     * @return true 表示网关端口可连接，false 表示当前环境不可执行真实 HTTP case
-     */
-    private boolean isGatewayReachable(URI baseUri, Integer connectTimeoutMs) {
-        String host = baseUri.getHost();
-        int port = baseUri.getPort();
-        if (host == null || port < 0) {
-            return false;
-        }
-        int timeout = connectTimeoutMs == null ? 1000 : Math.min(connectTimeoutMs, 1000);
-        Socket socket = new Socket();
-        try {
-            socket.connect(new InetSocketAddress(host, port), timeout);
-            return true;
-        } catch (IOException exception) {
-            log.warn("代付取消申请真实调用-测试网关不可达: {}", JsonSupport.toLogJson(logFields(
-                    "baseUrl", baseUri.toString(),
-                    "host", host,
-                    "port", port,
-                    "message", exception.getMessage())));
-            return false;
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException ignored) {
-                // 关闭探测 socket 失败不影响真实联调用例跳过判断。
-            }
-        }
     }
 
     private Map<String, Object> logFields(Object... keyValues) {

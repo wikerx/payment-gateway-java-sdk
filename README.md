@@ -136,9 +136,46 @@ http://192.168.2.47:58080/payment-sdk/api/webhook/payout
 OpenApiClient client = OpenApiClient.create();
 ```
 
-`src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferTest.java` 是真实代付申请 case，会读取 `merchant-config.properties` 并向 `/pay-api/payout/trade/transfer` 发起真实 HTTP 请求。该 case 可能创建沙盒代付交易并影响测试余额。
+真正可以请求网关并用于商户联调的 demo 都放在 `src/test/java/com/scott/payment/sdk/api` 目录下。IDE 中可以直接展开 `test/java/com.scott.payment.sdk/api`，按业务选择对应 case 运行：
 
-`src/test/java/com/scott/payment/sdk/client/*Test.java` 下的大多数 case 使用 `CapturingOpenApiTransport`，用于演示参数封装、JWT、加密请求体和响应解密，不会真实请求支付网关。商户复制代码时，如果要真实调用，请去掉测试 Transport，改用 `OpenApiClient.create()`。
+```text
+src/test/java/com/scott/payment/sdk/api/inquiry/balance/FundAccountsBalanceInquiryTest.java
+src/test/java/com/scott/payment/sdk/api/payin/PayinCheckoutPaymentTest.java
+src/test/java/com/scott/payment/sdk/api/payin/PayinDirectPaymentTest.java
+src/test/java/com/scott/payment/sdk/api/payin/PayinTradePaymentInquiryTest.java
+src/test/java/com/scott/payment/sdk/api/payin/refund/PayinRefundCreateTest.java
+src/test/java/com/scott/payment/sdk/api/payin/refund/PayinRefundInquiryTest.java
+src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferTest.java
+src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferInquiryTest.java
+src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferCancelTest.java
+```
+
+这些 case 会读取 `merchant-config.properties`，使用 `Jdk8HttpTransport` 请求 `payment.gateway.base-url`，不是模拟响应。运行前先确认 `payment.gateway.base-url`、`payment.gateway.merchant-no`、`payment.gateway.livemode`、API 私钥和 OpenAPI 加解密密钥配置正确。
+
+常用运行命令：
+
+```bash
+# 检索余额，只读查询，不创建交易
+mvn -q -Dtest=FundAccountsBalanceInquiryTest test
+
+# 代收：收银台、本地支付、检索代收交易
+mvn -q -Dtest=PayinCheckoutPaymentTest test
+mvn -q -Dtest=PayinDirectPaymentTest test
+mvn -q -Dtest=PayinTradePaymentInquiryTest test
+
+# 代收退款：创建退款、检索退款
+mvn -q -Dtest=PayinRefundCreateTest test
+mvn -q -Dtest=PayinRefundInquiryTest test
+
+# 代付：创建代付、检索代付、取消代付
+mvn -q -Dtest=PayoutTradeTransferTest test
+mvn -q -Dtest=PayoutTradeTransferInquiryTest test
+mvn -q -Dtest=PayoutTradeTransferCancelTest test
+```
+
+`PayoutTradeTransferTest`、`PayinCheckoutPaymentTest`、`PayinDirectPaymentTest`、`PayinRefundCreateTest` 会真实提交资金类请求，可能创建沙盒交易或触发网关业务校验。查询、退款、取消类 case 中写死的 `tradeNo`、`orderNo`、`charge` 只是测试环境示例值；商户联调时应替换为自己上一步接口返回的真实标识。
+
+`src/test/java/com/scott/payment/sdk/crypto` 和 `src/test/java/com/scott/payment/sdk/jwt` 下的 reference case 用于学习 JWT、Header、请求加密、响应解密和 compact payload 五段拆分，不负责创建真实交易。`src/test/java/com/scott/payment/sdk/api/webhook` 下的 case 用于本地验证回调验签和 Controller 行为，也不会请求网关。
 
 ### 4. 查询结果和余额
 
@@ -353,6 +390,7 @@ public class MerchantPayoutWebhookHandler implements PayoutWebhookHandler {
 
 ```java
 RefundCreateRequest request = new RefundCreateRequest();
+request.setOrderNo(OrderNoGenerator.generate("REFUND_"));
 request.setTradeNo("pay_123");
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("14.99"));
@@ -412,15 +450,20 @@ OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 
 | 目录 / 用例 | 是否真实请求网关 | 用途 |
 |---|---:|---|
-| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferTest.java` | 是 | 真实创建沙盒代付交易，商户可直接参考完整调用方式 |
-| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferRetrieveTest.java` | 是 | 真实检索指定代付交易，商户可参考 GET 查询接口调用方式 |
-| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferCancelTest.java` | 是 | 真实提交代付取消申请，商户可参考取消接口的加密 POST 调用方式 |
-| `src/test/java/com/scott/payment/sdk/client/*Test.java` | 否 | 使用 `CapturingOpenApiTransport` 模拟网关，演示每个 API 的参数封装、加密请求和响应解析 |
+| `src/test/java/com/scott/payment/sdk/api/inquiry/balance/FundAccountsBalanceInquiryTest.java` | 是 | 真实检索商户资金账户余额，商户可参考只读查询接口调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/payin/PayinCheckoutPaymentTest.java` | 是 | 真实创建收银台代收交易，商户可参考收款下单参数 |
+| `src/test/java/com/scott/payment/sdk/api/payin/PayinDirectPaymentTest.java` | 是 | 真实创建本地支付直连代收交易，当前示例使用 `payType=1` 和 `paymentMethod=CASHAPP` |
+| `src/test/java/com/scott/payment/sdk/api/payin/PayinTradePaymentInquiryTest.java` | 是 | 真实检索指定代收交易，商户需替换为自己的代收 `tradeNo` |
+| `src/test/java/com/scott/payment/sdk/api/payin/refund/PayinRefundCreateTest.java` | 是 | 真实提交代收退款申请；原交易不可退时网关可能返回业务失败 |
+| `src/test/java/com/scott/payment/sdk/api/payin/refund/PayinRefundInquiryTest.java` | 是 | 真实检索退款申请，商户需替换为自己的退款 `charge` / `refundNo` |
+| `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferTest.java` | 是 | 真实创建沙盒代付交易，商户可直接参考完整调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferInquiryTest.java` | 是 | 真实检索指定代付交易，商户可参考 GET 查询接口调用方式 |
+| `src/test/java/com/scott/payment/sdk/api/payout/PayoutTradeTransferCancelTest.java` | 是 | 真实提交代付取消申请，商户可参考取消接口的加密 POST 调用方式 |
 | `src/test/java/com/scott/payment/sdk/crypto/*ReferenceTest.java` | 否 | 演示 compact payload 加密、解密、五段拆分 |
 | `src/test/java/com/scott/payment/sdk/jwt/*ReferenceTest.java` | 否 | 演示 JWT、Authorization、POST/GET Header 生成 |
 | `src/test/java/com/scott/payment/sdk/api/webhook/**/*Test.java` | 否 | 演示 payin / payout 回调验签和 Controller 行为 |
 
-真实交易 case 会读取本地 `merchant-config.properties`，并请求 `payment.gateway.base-url`。模拟 case 只适合商户学习 SDK 调用方式，不能证明网关环境已经连通。取消代付 case 会真实请求网关，如果目标交易已经成功或进入不可取消状态，网关可能返回业务失败，这不代表 SDK 加密调用链路失败。
+真实交易 case 会读取本地 `merchant-config.properties`，并请求 `payment.gateway.base-url`。参考 case 只适合商户学习 SDK 调用方式，不能证明网关环境已经连通。退款和取消类 case 会真实请求网关，如果目标交易未支付成功、已成功、已退款或进入不可变更状态，网关可能返回业务失败，这不代表 SDK 加密调用链路失败。
 
 ## 异常
 

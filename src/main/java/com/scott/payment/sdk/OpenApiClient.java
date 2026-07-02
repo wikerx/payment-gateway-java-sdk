@@ -34,6 +34,7 @@ import com.scott.payment.sdk.model.payout.PayoutCreateRequest;
 import com.scott.payment.sdk.model.payout.PayoutResponse;
 import com.scott.payment.sdk.model.refund.RefundCreateRequest;
 import com.scott.payment.sdk.model.refund.RefundResponse;
+import com.scott.payment.sdk.util.OrderNoGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -235,7 +236,7 @@ public class OpenApiClient {
     public OpenApiResult<PaymentResponse> retrievePayment(String tradeNo) {
         return getSecured(OpenApiEndpoint.PAYMENT_RETRIEVE,
                 PaymentResponse.class,
-                "query-" + UUID.randomUUID(),
+                uniqueJwtId("PAYMENT_QUERY_"),
                 encodePath(requireText(tradeNo, "tradeNo")));
     }
 
@@ -254,7 +255,7 @@ public class OpenApiClient {
         return postEncrypted(OpenApiEndpoint.PAYOUT_TRANSFER_CREATE,
                 request,
                 PayoutResponse.class,
-                requireText(request.getOrderNo(), "orderNo"));
+                uniqueJwtId("PAYOUT_CREATE_"));
     }
 
     /**
@@ -269,14 +270,15 @@ public class OpenApiClient {
     public OpenApiResult<PayoutResponse> retrievePayout(String tradeNo) {
         return getSecured(OpenApiEndpoint.PAYOUT_TRANSFER_RETRIEVE,
                 PayoutResponse.class,
-                "query-" + UUID.randomUUID(),
+                uniqueJwtId("PAYOUT_QUERY_"),
                 encodePath(requireText(tradeNo, "tradeNo")));
     }
 
     /**
      * 取消代付交易。
      *
-     * 该方法使用 tradeNo 或 orderNo 作为 JWT jti 依据，按最新协议加密请求并提交到代付取消接口。
+     * 该方法每次请求都会生成唯一 JWT jti，按最新协议加密请求并提交到代付取消接口。
+     * tradeNo 和 orderNo 只放在加密业务报文中用于网关定位交易，不能复用为 jti，否则连续联调会触发 JWT 防重放。
      * 取消请求可能改变网关侧代付状态；SDK 不负责商户本地事务、状态终态保护或取消后的资金对账。
      *
      * @param request 代付取消请求
@@ -284,7 +286,7 @@ public class OpenApiClient {
      */
     public OpenApiResult<PayoutCancelResponse> cancelPayout(PayoutCancelRequest request) {
         requireObject(request, "request");
-        String jti = StringUtils.defaultIfBlank(request.getTradeNo(), request.getOrderNo());
+        String jti = uniqueJwtId("PAYOUT_CANCEL_");
         return postEncrypted(OpenApiEndpoint.PAYOUT_TRANSFER_CANCEL,
                 request,
                 PayoutCancelResponse.class,
@@ -302,8 +304,7 @@ public class OpenApiClient {
      */
     public OpenApiResult<RefundResponse> createRefund(RefundCreateRequest request) {
         validateRefundCreateRequest(request);
-        String jti = StringUtils.defaultIfBlank(request.getCharge(),
-                request.getTradeNo() + "-" + request.getRefundAmount());
+        String jti = uniqueJwtId("REFUND_CREATE_");
         return postEncrypted(OpenApiEndpoint.REFUND_CREATE, request, RefundResponse.class, jti);
     }
 
@@ -318,7 +319,7 @@ public class OpenApiClient {
     public OpenApiResult<RefundResponse> retrieveRefund(String refundNo) {
         return getSecured(OpenApiEndpoint.REFUND_RETRIEVE,
                 RefundResponse.class,
-                "query-" + UUID.randomUUID(),
+                uniqueJwtId("REFUND_QUERY_"),
                 encodePath(requireText(refundNo, "refundNo")));
     }
 
@@ -333,7 +334,7 @@ public class OpenApiClient {
         return getListSecured(OpenApiEndpoint.FUND_ACCOUNTS_BALANCE_INQUIRY,
                 OpenApiEndpoint.FUND_ACCOUNTS_BALANCE_INQUIRY.getPath(),
                 BalanceResponse.class,
-                "balance-" + UUID.randomUUID());
+                uniqueJwtId("BALANCE_QUERY_"));
     }
 
     /**
@@ -351,7 +352,7 @@ public class OpenApiClient {
         return getListSecured(OpenApiEndpoint.FUND_ACCOUNTS_BALANCE_INQUIRY,
                 path,
                 BalanceResponse.class,
-                "balance-" + UUID.randomUUID());
+                uniqueJwtId("BALANCE_QUERY_"));
     }
 
     /**
@@ -365,7 +366,7 @@ public class OpenApiClient {
      */
     public OpenApiResult<CustomerResponse> createCustomer(CustomerCreateRequest request) {
         validateCustomerCreateRequest(request);
-        String jti = "customer-" + StringUtils.defaultIfBlank(request.getEmail(), UUID.randomUUID().toString());
+        String jti = uniqueJwtId("CUSTOMER_CREATE_");
         return postEncrypted(OpenApiEndpoint.CUSTOMER_CREATE, request, CustomerResponse.class, jti);
     }
 
@@ -381,7 +382,7 @@ public class OpenApiClient {
     public OpenApiResult<CustomerResponse> retrieveCustomer(String customerId) {
         return getSecured(OpenApiEndpoint.CUSTOMER_RETRIEVE,
                 CustomerResponse.class,
-                "query-" + UUID.randomUUID(),
+                uniqueJwtId("CUSTOMER_QUERY_"),
                 encodePath(requireText(customerId, "customerId")));
     }
 
@@ -394,7 +395,7 @@ public class OpenApiClient {
      * @param api API 元数据，包含接口名称、HTTP 方法和路径
      * @param request 明文请求对象，可能包含金额、客户资料、卡信息等敏感数据
      * @param responseType 响应 data 类型
-     * @param jwtId JWT jti，参与防重放，建议与商户订单号或业务标识关联
+     * @param jwtId JWT jti，参与防重放；写操作必须保证每次请求唯一，业务幂等由加密请求体中的订单号、交易号等字段承载
      * @param <T> 响应 data 类型
      * @return SDK 响应
      */
@@ -469,7 +470,20 @@ public class OpenApiClient {
         return postEncrypted(OpenApiEndpoint.PAYMENT_CREATE,
                 request,
                 PaymentResponse.class,
-                requireText(request.getOrderNo(), "orderNo"));
+                uniqueJwtId("PAYMENT_CREATE_"));
+    }
+
+    /**
+     * 生成单次请求唯一的 JWT jti。
+     *
+     * jti 只用于网关鉴权层防重放，不承担业务幂等职责；商户订单号、交易号、退款号等业务标识应继续放在加密请求体中。
+     * 如果把业务标识直接作为 jti，商户重复查询、重复取消或重试同一业务请求时会被网关判定为 Authorization JWT jti replayed。
+     *
+     * @param prefix 业务场景前缀，仅用于日志排查和网关排错
+     * @return 带场景前缀的唯一 jti
+     */
+    private String uniqueJwtId(String prefix) {
+        return OrderNoGenerator.generate(requireText(prefix, "jti prefix"));
     }
 
     /**
