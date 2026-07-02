@@ -9,7 +9,8 @@
 - Java 8
 - Maven
 - 默认 HTTP 传输使用 JDK 8 `HttpURLConnection`
-- 不依赖 Spring Boot，不引入 OkHttp、Apache HttpClient、Gson 或 fastjson 1.x
+- 核心 SDK 不强依赖 Spring Boot；代付异步通知示例使用可选 Spring Boot Web
+- 不引入 OkHttp、Apache HttpClient、Gson 或 fastjson 1.x
 
 ## 安装
 
@@ -151,6 +152,118 @@ request.setPaymentMethodData(Collections.singletonMap("email", "receiver@example
 
 OpenApiResult<PayoutResponse> result = client.createPayout(request);
 ```
+
+## Spring Boot Webhook 示例
+
+SDK 提供 Spring Boot 版本的异步通知接收示例。基础启动类为 `com.scott.payment.sdk.OpenApiSdkApplication`，默认配置在 `src/main/resources/application.yml`：
+
+```yaml
+server:
+  port: 58080
+  servlet:
+    context-path: /payment-sdk
+```
+
+启动后的默认接收地址：
+
+```http
+GET /payment-sdk/api/webhook/payin
+GET /payment-sdk/api/webhook/payout
+```
+
+商户如果把 Controller 复制到自己的项目中，可以按自己的服务端口和 context-path 调整最终 notifyUrl。
+
+### 代收异步通知
+
+代收回调包路径为 `com.scott.payment.sdk.api.webhook.payin`。
+
+网关会把回调参数放在 query/form 参数中，并在 Header 中携带：
+
+| Header | 说明 |
+|---|---|
+| `t` | 网关生成签名时使用的毫秒时间戳 |
+| `signature` | 网关签名，当前规则为 SHA-256 hex |
+
+代收回调签名原文：
+
+```text
+t + tradeNo + orderNo + currency + amount + status + code + message
+```
+
+SDK 中对应的验签类：
+
+```java
+import com.scott.payment.sdk.api.webhook.payin.PayinWebhookVerifier;
+
+boolean valid = new PayinWebhookVerifier().verify(timestamp, signature, request);
+```
+
+商户生产接入时应实现自己的 `PayinWebhookHandler`，用于落库、幂等、终态保护和后续业务处理：
+
+```java
+import com.scott.payment.sdk.api.webhook.payin.PayinWebhookHandler;
+import com.scott.payment.sdk.model.webhook.PayinWebhookRequest;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MerchantPayinWebhookHandler implements PayinWebhookHandler {
+
+    @Override
+    public void handle(PayinWebhookRequest request) {
+        // 1. 使用 tradeNo 或 orderNo 做幂等
+        // 2. 校验 amount、currency、merNo 是否与本地订单一致
+        // 3. 做终态保护，避免重复通知或旧通知覆盖新状态
+        // 4. 按业务需要更新订单状态或触发后续流程
+    }
+}
+```
+
+### 代付异步通知
+
+代付回调包路径为 `com.scott.payment.sdk.api.webhook.payout`。
+
+网关会把回调参数放在 query/form 参数中，并在 Header 中携带：
+
+| Header | 说明 |
+|---|---|
+| `t` | 网关生成签名时使用的毫秒时间戳 |
+| `signature` | 网关签名，当前规则为 SHA-256 hex |
+
+代付回调签名原文：
+
+```text
+t + tradeNo + currency + amount + status + code + message
+```
+
+SDK 中对应的验签类：
+
+```java
+import com.scott.payment.sdk.api.webhook.payout.PayoutWebhookVerifier;
+
+boolean valid = new PayoutWebhookVerifier().verify(timestamp, signature, request);
+```
+
+商户生产接入时应实现自己的 `PayoutWebhookHandler`，用于落库、幂等、终态保护和后续业务处理：
+
+```java
+import com.scott.payment.sdk.api.webhook.payout.PayoutWebhookHandler;
+import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MerchantPayoutWebhookHandler implements PayoutWebhookHandler {
+
+    @Override
+    public void handle(PayoutWebhookRequest request) {
+        // 1. 使用 tradeNo 或 orderNo 做幂等
+        // 2. 校验 amount、currency、merNo 是否与本地订单一致
+        // 3. 做终态保护，避免重复通知或旧通知覆盖新状态
+        // 4. 按业务需要更新订单状态或触发后续流程
+    }
+}
+```
+
+如果商户没有提供 `PayoutWebhookHandler` Bean，SDK 会使用 `LoggingPayoutWebhookHandler` 仅记录日志，不做任何资金或状态修改。生产环境不要依赖默认日志处理器完成业务处理。
 
 ## 退款
 

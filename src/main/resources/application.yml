@@ -1,0 +1,8 @@
+server:
+  port: 58080
+  servlet:
+    context-path: /payment-sdk
+
+spring:
+  application:
+    name: payment-gateway-java-sdk

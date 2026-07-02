@@ -66,13 +66,20 @@ public class PayoutTradeTransferTest {
         assertThat(result.getLivemode()).isEqualTo(false);
     }
 
+    /**
+     * @description : 构建请求参数
+     * @author      : scott
+     * @date        : 2026/7/2 - 09:52
+     * @params      : []
+     * @return      : com.scott.payment.sdk.model.payout.PayoutCreateRequest
+     */
     private PayoutCreateRequest payoutCreateRequest() {
         PayoutCreateRequest request = new PayoutCreateRequest();
         request.setOrderNo(OrderNoGenerator.generate("PAYOUT_"));
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("3.11"));
 //        Option
-        request.setNotifyUrl("https://manage.forgottenthrone.com/notifyUrl");
+        request.setNotifyUrl("http://192.168.2.47:58080/payment-sdk/api/webhook/payout");
 
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");
@@ -83,11 +90,11 @@ public class PayoutTradeTransferTest {
 //        request.setPaymentMethod(PaymentMethod.CASHAPP);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
 
-//        request.setPaymentMethod(PaymentMethod.CARD);
-//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
+        request.setPaymentMethod(PaymentMethod.CARD);
+        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
 
-        request.setPaymentMethod(PaymentMethod.PAY_PAL);
-        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
+//        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
 
 //        request.setPaymentMethod(PaymentMethod.UPI);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.UPI.getCode()));

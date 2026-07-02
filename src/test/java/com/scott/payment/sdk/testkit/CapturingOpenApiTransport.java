@@ -26,7 +26,8 @@ import java.util.Map;
  * @date : 2026-07-01 11:08
  * @email : scott_x@163.com
  * @description : OpenAPI SDK 内存测试传输层，负责捕获 SDK HTTP 请求、解析加密请求外壳并模拟网关加密响应。
- *                本类只用于单元测试，不发起真实 HTTP 请求、不新增数据库数据、不修改支付、代付、退款或资金状态；响应 data 使用测试公钥加密以验证 SDK 解密链路。
+ *                本类只用于 SDK 示例和单元测试，不发起真实 HTTP 请求、不访问网关平台、不新增数据库数据、不修改支付、代付、退款或资金状态。
+ *                responseData 方法中的 tradeNo、余额、客户等字段都是模拟网关返回，目的是让商户看到 SDK 加密请求和解密响应的完整代码结构。
  * @status : create
  */
 public final class CapturingOpenApiTransport implements HttpTransport {
@@ -70,6 +71,8 @@ public final class CapturingOpenApiTransport implements HttpTransport {
 
     /**
      * 创建捕获请求的测试传输层。
+     *
+     * 构造时只从测试密钥派生一个响应公钥，用于在内存中模拟网关响应加密；不会读取商户生产配置或访问网关平台。
      */
     public CapturingOpenApiTransport() {
         this.merchantResponsePublicKey = deriveResponsePublicKey(OpenApiTestSupport.clientConfig());
@@ -79,6 +82,7 @@ public final class CapturingOpenApiTransport implements HttpTransport {
      * 捕获 SDK 请求并返回模拟响应。
      *
      * 该方法仅在内存中解析请求和生成加密响应，不访问网络、不修改资金或交易状态。
+     * 返回的 HTTP 200、code=0 和 data 均为测试模拟结果，不代表网关平台真实交易结果。
      *
      * @param request SDK 构造的 HTTP 请求
      * @return 模拟网关 HTTP 响应
@@ -98,10 +102,26 @@ public final class CapturingOpenApiTransport implements HttpTransport {
                 .build();
     }
 
+    /**
+     * 设置模拟网关响应中的 livemode。
+     *
+     * 该方法只影响测试返回值，用于验证 SDK 对响应环境的校验逻辑，不会修改真实商户配置。
+     *
+     * @param responseLivemode 模拟响应 livemode
+     */
     public void setResponseLivemode(Boolean responseLivemode) {
         this.responseLivemode = responseLivemode;
     }
 
+    /**
+     * 构造模拟网关响应外壳。
+     *
+     * 该方法固定返回测试成功 code，并把模拟业务 data 加密为 compact payload。
+     * 这里的响应不是网关平台真实响应，只用于验证 SDK 解密链路和商户示例代码可读性。
+     *
+     * @param data 模拟业务响应数据
+     * @return 模拟 OpenAPI 加密响应外壳
+     */
     private OpenApiEncryptedResponse envelope(Object data) {
         return OpenApiEncryptedResponse.builder()
                 .code(OpenApiConstants.RESPONSE_CODE_SUCCESS)
@@ -111,10 +131,28 @@ public final class CapturingOpenApiTransport implements HttpTransport {
                 .build();
     }
 
+    /**
+     * 使用测试公钥加密模拟响应 data。
+     *
+     * 该方法模拟网关使用商户响应公钥加密 data 的过程，不会访问真实平台密钥服务。
+     *
+     * @param data 模拟业务响应数据
+     * @return compact payload 密文
+     */
     private String encrypted(Object data) {
         return crypto.encrypt(JsonSupport.toJson(data), merchantResponsePublicKey);
     }
 
+    /**
+     * 根据请求路径构造模拟网关业务响应。
+     *
+     * 注意：本方法返回的 tradeNo、orderNo、余额、客户资料等字段全部是测试假数据。
+     * 这些数据只用于让商户示例用例可以完整演示“SDK 请求加密 -> 模拟网关响应加密 -> SDK 响应解密”流程。
+     * 如果需要验证平台真实业务结果，请使用默认 Jdk8HttpTransport 并运行真实调用 case，例如 PayoutTradeTransferTest。
+     *
+     * @param request SDK 构造的 HTTP 请求
+     * @return 模拟业务响应数据
+     */
     private Object responseData(SdkHttpRequest request) {
         Map<String, Object> data = new HashMap<String, Object>();
         String path = request.getUri().getPath();
@@ -141,6 +179,14 @@ public final class CapturingOpenApiTransport implements HttpTransport {
         return data;
     }
 
+    /**
+     * 从测试私钥派生模拟网关响应加密所需的公钥。
+     *
+     * 生产网关会使用平台保存的商户响应公钥加密响应 data；测试传输层没有真实平台服务，因此从测试私钥派生公钥模拟这一过程。
+     *
+     * @param config 测试客户端配置
+     * @return 模拟网关响应加密公钥
+     */
     private PublicKey deriveResponsePublicKey(OpenApiClientConfig config) {
         try {
             RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) RsaKeyUtils.readPrivateKey(config.getMerchantResponsePrivateKey());
