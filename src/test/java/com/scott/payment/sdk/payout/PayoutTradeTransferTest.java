@@ -90,11 +90,11 @@ public class PayoutTradeTransferTest {
 //        request.setPaymentMethod(PaymentMethod.CASHAPP);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
 
-        request.setPaymentMethod(PaymentMethod.CARD);
-        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
+//        request.setPaymentMethod(PaymentMethod.CARD);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
 
-//        request.setPaymentMethod(PaymentMethod.PAY_PAL);
-//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
+        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
 
 //        request.setPaymentMethod(PaymentMethod.UPI);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.UPI.getCode()));

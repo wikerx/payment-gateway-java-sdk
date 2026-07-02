@@ -83,6 +83,75 @@ payment.gateway.merchant-response-private-key=<pkcs8-private-key-base64-or-pem>
 OpenApiClient client = OpenApiClient.create();
 ```
 
+`OpenApiClient.create()` 会读取 classpath 下固定文件 `merchant-config.properties`，并使用默认 `Jdk8HttpTransport` 真实请求 `payment.gateway.base-url`。如果测试代码中使用 `new OpenApiClient(config, new CapturingOpenApiTransport())`，则只是在内存中模拟网关响应，不会向支付网关创建真实交易。
+
+## 商户跑通交易流程
+
+商户本地要跑通一笔完整交易，建议按下面顺序执行。
+
+### 1. 准备配置
+
+确认 `src/main/resources/merchant-config.properties` 或商户项目 classpath 下的同名文件包含以下配置：
+
+```properties
+payment.gateway.base-url=http://localhost:58060
+payment.gateway.merchant-no=2606177036
+payment.gateway.livemode=false
+payment.gateway.api-private-key=<merchant-api-private-key>
+payment.gateway.debug-raw-log-enabled=true
+payment.gateway.platform-request-public-key-path=classpath:keys/2606177036_PLATFORM_REQUEST_PUBLIC_KEY.pem
+payment.gateway.merchant-response-private-key-path=classpath:keys/2606177036_MERCHANT_RESPONSE_PRIVATE_KEY.pem
+```
+
+`debug-raw-log-enabled=true` 只建议沙盒联调时开启。开启后可以直接看到“请求地址、请求头、请求原始明文报文、请求参数拆分、请求密文参数、响应原始密文参数、响应参数拆分、响应原始明文参数”，便于和 Apifox 或网关日志逐项核对。
+
+### 2. 启动回调接收服务
+
+如果商户要接收 payin / payout 异步通知，可以直接启动 SDK 示例 Spring Boot 应用：
+
+```bash
+mvn -q -DskipTests package
+mvn -q dependency:build-classpath -Dmdep.outputFile=target/runtime-classpath.txt
+java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.sdk.OpenApiSdkApplication
+```
+
+也可以在 IDE 中直接启动 `com.scott.payment.sdk.OpenApiSdkApplication`。默认地址：
+
+```text
+代收回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
+代付回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+```
+
+如果支付网关无法访问商户本机 `localhost`，需要把 `notifyUrl` 改成网关可访问的内网 IP、公网域名或穿透地址，例如：
+
+```text
+http://192.168.2.47:58080/payment-sdk/api/webhook/payout
+```
+
+### 3. 发起真实交易
+
+真实请求网关时必须使用默认 HTTP 传输层：
+
+```java
+OpenApiClient client = OpenApiClient.create();
+```
+
+`src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferTest.java` 是真实代付申请 case，会读取 `merchant-config.properties` 并向 `/pay-api/payout/trade/transfer` 发起真实 HTTP 请求。该 case 可能创建沙盒代付交易并影响测试余额。
+
+`src/test/java/com/scott/payment/sdk/client/*Test.java` 下的大多数 case 使用 `CapturingOpenApiTransport`，用于演示参数封装、JWT、加密请求体和响应解密，不会真实请求支付网关。商户复制代码时，如果要真实调用，请去掉测试 Transport，改用 `OpenApiClient.create()`。
+
+### 4. 查询结果和余额
+
+创建交易后应保存平台返回的 `tradeNo`，并用查询接口确认状态：
+
+```java
+OpenApiResult<PaymentResponse> payment = client.retrievePayment("pay_123");
+OpenApiResult<PayoutResponse> payout = client.retrievePayout("payout_123");
+OpenApiResult<List<BalanceResponse>> balances = client.retrieveBalances("USD");
+```
+
+资金类接口遇到网络异常时，不要直接换新订单号重试。应优先使用原订单号或平台流水查询网关侧最终状态，避免重复扣款、重复出款或重复退款。
+
 ## 支付方式枚举
 
 SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使用枚举，避免手写字符串。
@@ -102,12 +171,13 @@ SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使
 ```java
 import com.scott.payment.sdk.util.OrderNoGenerator;
 
+OpenApiClient client = OpenApiClient.create();
 CheckoutPaymentRequest request = new CheckoutPaymentRequest();
 request.setOrderNo(OrderNoGenerator.generate("PAY"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("14.99"));
 request.setReturnUrl("https://merchant.example.com/return");
-request.setNotifyUrl("https://merchant.example.com/notify");
+request.setNotifyUrl("http://localhost:58080/payment-sdk/api/webhook/payin");
 
 OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ```
@@ -119,11 +189,13 @@ OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ```java
 import com.scott.payment.sdk.util.OrderNoGenerator;
 
+OpenApiClient client = OpenApiClient.create();
 CardPaymentRequest request = new CardPaymentRequest();
 request.setOrderNo(OrderNoGenerator.generate("CARD"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("20.00"));
 request.setWebsite("https://merchant.example.com");
+request.setNotifyUrl("http://localhost:58080/payment-sdk/api/webhook/payin");
 
 CardPaymentMethodData card = new CardPaymentMethodData();
 card.setNumber("4111111111111111");
@@ -143,15 +215,27 @@ OpenApiResult<PaymentResponse> result = client.createCardPayment(request);
 import com.scott.payment.sdk.util.OrderNoGenerator;
 import com.scott.payment.sdk.model.common.PaymentMethod;
 
+OpenApiClient client = OpenApiClient.create();
 PayoutCreateRequest request = new PayoutCreateRequest();
 request.setOrderNo(OrderNoGenerator.generate("PO"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("9.99"));
-request.setPaymentMethod(PaymentMethod.PAY_PAL);
-request.setPaymentMethodData(Collections.singletonMap("email", "receiver@example.com"));
+request.setNotifyUrl("http://localhost:58080/payment-sdk/api/webhook/payout");
+request.setClientIp("47.125.221.223");
+request.setWebsite("https://manage.forgottenthrone.com/");
+request.setPaymentMethod(PaymentMethod.CARD);
+
+Map<String, Object> paymentMethodData = new HashMap<String, Object>();
+paymentMethodData.put("number", "4000056655665556");
+paymentMethodData.put("expMonth", "06");
+paymentMethodData.put("expYear", "2029");
+paymentMethodData.put("cvc", "123");
+request.setPaymentMethodData(paymentMethodData);
 
 OpenApiResult<PayoutResponse> result = client.createPayout(request);
 ```
+
+代付申请是资金类请求。商户生产接入时必须在本地先生成唯一 `orderNo`，并基于 `orderNo` 做幂等落库；网关返回 `tradeNo` 后保存平台流水，最终状态以查询接口或代付异步通知为准。
 
 ## Spring Boot Webhook 示例
 
@@ -167,8 +251,8 @@ server:
 启动后的默认接收地址：
 
 ```http
-GET /payment-sdk/api/webhook/payin
-GET /payment-sdk/api/webhook/payout
+GET http://localhost:58080/payment-sdk/api/webhook/payin
+GET http://localhost:58080/payment-sdk/api/webhook/payout
 ```
 
 商户如果把 Controller 复制到自己的项目中，可以按自己的服务端口和 context-path 调整最终 notifyUrl。
@@ -281,6 +365,7 @@ OpenApiResult<RefundResponse> result = client.createRefund(request);
 ## 查询与余额
 
 ```java
+OpenApiClient client = OpenApiClient.create();
 OpenApiResult<PaymentResponse> payment = client.retrievePayment("pay_123");
 OpenApiResult<PayoutResponse> payout = client.retrievePayout("po_123");
 OpenApiResult<RefundResponse> refund = client.retrieveRefund("re_123");
@@ -290,6 +375,7 @@ OpenApiResult<List<BalanceResponse>> balances = client.retrieveBalances("USD");
 ## 客户
 
 ```java
+OpenApiClient client = OpenApiClient.create();
 CustomerCreateRequest request = new CustomerCreateRequest();
 request.setFirstname("Ada");
 request.setLastname("Lovelace");
@@ -301,11 +387,40 @@ OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 
 ## 当前协议说明
 
-- 已集成接口统一按后端 `@VerificationAndProcessing` 走 Bearer JWT。JWT 使用商户 API 私钥做 HS256 签名，并包含 `merchantId`、`livemode`、`jti`、`iat`、`exp`。
+- 已集成接口统一按后端 `强制加密规则` 走 Bearer JWT。JWT 使用商户 API 私钥做 HS256 签名，并包含 `merchantId`、`livemode`、`jti`、`iat`、`exp`。
 - POST 请求体格式为 `{"livemode":false,"data":"compact密文"}`；GET 请求无 body，但 JWT 中仍必须携带 `livemode`。
 - 响应外层包含 `livemode`。SDK 会校验响应 `livemode` 与本地配置一致，不一致时抛出 `OpenApiResponseException`。
 - SDK 当前封装了代收、退款、代付、余额、客户接口，并按接口提供独立 case，例如 `FundAccountsBalanceInquiryTest`。这些对外 API 均按当前 `@VerificationAndProcessing` 注解加密协议调用。
 - compact payload header 固定：`typ=PAYMENT-PAYLOAD`、`alg=RSA-OAEP-256`、`enc=A256GCM`，不输出 `kid`。
+
+## 已封装接口
+
+| 业务 | SDK 方法 | HTTP | 网关路径 | 请求体 | 说明 |
+|---|---|---|---|---|---|
+| 创建代收 | `createCheckoutPayment` / `createLocalPayment` / `createCardPayment` | POST | `/pay-api/trade/payment` | 加密 `livemode + data` | 会创建代收交易 |
+| 查询代收 | `retrievePayment` | GET | `/pay-api/trade/payment/{tradeNo}` | 无 | 响应 `data` 自动解密 |
+| 创建退款 | `createRefund` | POST | `/pay-api/trade/refund` | 加密 `livemode + data` | 资金类请求，需商户本地幂等 |
+| 查询退款 | `retrieveRefund` | GET | `/pay-api/trade/refund/{refundNo}` | 无 | 响应 `data` 自动解密 |
+| 创建代付 | `createPayout` | POST | `/pay-api/payout/trade/transfer` | 加密 `livemode + data` | 会创建代付申请 |
+| 查询代付 | `retrievePayout` | GET | `/pay-api/payout/trade/transfer/{tradeNo}` | 无 | 响应 `data` 自动解密 |
+| 取消代付 | `cancelPayout` | POST | `/pay-api/payout/trade/transfer-cancel` | 加密 `livemode + data` | 可能改变代付状态 |
+| 查询余额 | `retrieveBalances` | GET | `/pay-api/fund/accounts/get` | 无 | 可传 `currency` query |
+| 创建客户 | `createCustomer` | POST | `/pay-api/mer/customers` | 加密 `livemode + data` | 涉及客户资料 |
+| 查询客户 | `retrieveCustomer` | GET | `/pay-api/mer/customers/{customerId}` | 无 | 响应可能包含个人信息 |
+
+## 用例目录说明
+
+| 目录 / 用例 | 是否真实请求网关 | 用途 |
+|---|---:|---|
+| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferTest.java` | 是 | 真实创建沙盒代付交易，商户可直接参考完整调用方式 |
+| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferRetrieveTest.java` | 是 | 真实检索指定代付交易，商户可参考 GET 查询接口调用方式 |
+| `src/test/java/com/scott/payment/sdk/payout/PayoutTradeTransferCancelTest.java` | 是 | 真实提交代付取消申请，商户可参考取消接口的加密 POST 调用方式 |
+| `src/test/java/com/scott/payment/sdk/client/*Test.java` | 否 | 使用 `CapturingOpenApiTransport` 模拟网关，演示每个 API 的参数封装、加密请求和响应解析 |
+| `src/test/java/com/scott/payment/sdk/crypto/*ReferenceTest.java` | 否 | 演示 compact payload 加密、解密、五段拆分 |
+| `src/test/java/com/scott/payment/sdk/jwt/*ReferenceTest.java` | 否 | 演示 JWT、Authorization、POST/GET Header 生成 |
+| `src/test/java/com/scott/payment/sdk/api/webhook/**/*Test.java` | 否 | 演示 payin / payout 回调验签和 Controller 行为 |
+
+真实交易 case 会读取本地 `merchant-config.properties`，并请求 `payment.gateway.base-url`。模拟 case 只适合商户学习 SDK 调用方式，不能证明网关环境已经连通。取消代付 case 会真实请求网关，如果目标交易已经成功或进入不可取消状态，网关可能返回业务失败，这不代表 SDK 加密调用链路失败。
 
 ## 异常
 
