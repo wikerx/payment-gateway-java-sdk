@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Payment Gateway Demo</title>
+    <link rel="stylesheet" th:href="@{/demo/demo.css}"/>
+</head>
+<body>
+<main class="shell">
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Payment Gateway Java SDK</p>
+            <h1>商户 API 联调控制台</h1>
+        </div>
+        <div class="env-panel">
+            <span th:text="${livemode} ? 'LIVE' : 'SANDBOX'">SANDBOX</span>
+            <strong th:text="${merchantNo}">merchant</strong>
+            <small th:text="${baseUrl}">baseUrl</small>
+        </div>
+    </header>
+
+    <section class="api-map" aria-label="API groups">
+        <article class="group-panel" th:each="group : ${groups}">
+            <div class="group-head">
+                <h2 th:text="${group.name}">客户</h2>
+                <p th:text="${group.description}">API group description</p>
+            </div>
+            <div class="api-list">
+                <a class="api-row" th:each="api : ${group.apis}" th:href="@{'/demo/apis/' + ${api.code}}">
+                    <span>
+                        <strong th:text="${api.name}">API name</strong>
+                        <small th:text="${api.description}">description</small>
+                    </span>
+                    <em th:text="${api.endpoint.method}">POST</em>
+                </a>
+            </div>
+        </article>
+    </section>
+</main>
+</body>
+</html>

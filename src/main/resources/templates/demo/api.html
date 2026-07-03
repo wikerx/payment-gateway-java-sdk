@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${definition.name} + ' - Payment Gateway Demo'">Payment Gateway Demo</title>
+    <link rel="stylesheet" th:href="@{/demo/demo.css}"/>
+</head>
+<body>
+<main class="shell">
+    <nav class="crumb">
+        <a th:href="@{/demo/apis}">API 首页</a>
+        <span>/</span>
+        <span th:text="${definition.groupName}">代收</span>
+    </nav>
+
+    <header class="api-title">
+        <div>
+            <p class="eyebrow" th:text="${definition.endpoint.method} + ' ' + ${definition.endpoint.path}">POST /path</p>
+            <h1 th:text="${definition.name}">API Name</h1>
+            <p th:text="${definition.description}">description</p>
+        </div>
+        <div class="env-panel">
+            <span th:text="${livemode} ? 'LIVE' : 'SANDBOX'">SANDBOX</span>
+            <strong th:text="${merchantNo}">merchant</strong>
+            <small th:text="${baseUrl}">baseUrl</small>
+        </div>
+    </header>
+
+    <section class="workbench">
+        <form class="request-form" method="post" th:action="@{'/demo/apis/' + ${definition.code}}" th:object="${form}">
+            <div class="section-head">
+                <h2>请求参数</h2>
+                <p>默认值来自 SDK 示例和 merchant-config.properties，可直接修改后提交。</p>
+            </div>
+
+            <div class="field-grid">
+                <div class="field"
+                     th:each="field : ${definition.requestFields}"
+                     th:attr="data-field-name=${field.name}">
+                    <span class="label-line">
+                        <strong th:text="${field.label}">字段</strong>
+                        <em th:if="${field.required}">必填</em>
+                    </span>
+                    <select th:if="${field.select}"
+                            th:name="${'params[' + field.name + ']'}">
+                        <option th:each="option : ${field.options}"
+                                th:value="${option.value}"
+                                th:text="${option.label}"
+                                th:selected="${option.value == form.params[field.name]}">Option</option>
+                    </select>
+                    <input th:if="${!field.textarea && !field.select}"
+                           th:name="${'params[' + field.name + ']'}"
+                           th:value="${form.params[field.name]}"
+                           th:placeholder="${field.placeholder}"
+                           th:readonly="${field.name == 'merchantNo'}"/>
+                    <textarea th:if="${field.textarea}"
+                              th:name="${'params[' + field.name + ']'}"
+                              th:text="${form.params[field.name]}"
+                              th:placeholder="${field.placeholder}"></textarea>
+                    <small th:text="${field.description}">field description</small>
+                </div>
+            </div>
+
+            <button class="primary-action" type="submit" th:text="${definition.actionLabel}">提交</button>
+        </form>
+
+        <aside class="response-guide">
+            <div class="section-head">
+                <h2>响应字段</h2>
+                <p>提交后会在下方展示完整响应 JSON，这里说明关键字段含义。</p>
+            </div>
+            <dl>
+                <div th:each="field : ${definition.responseFields}">
+                    <dt th:text="${field.label}">code</dt>
+                    <dd th:text="${field.description}">description</dd>
+                </div>
+            </dl>
+        </aside>
+    </section>
+
+    <section class="result-panel" th:if="${invocation != null}">
+        <div class="result-head" th:classappend="${invocation.success} ? ' ok' : ' fail'">
+            <h2 th:text="${invocation.summary}">调用完成</h2>
+            <span th:text="${invocation.success} ? 'SUCCESS' : 'ERROR'">SUCCESS</span>
+        </div>
+
+        <div class="json-pair">
+            <article>
+                <h3>请求明文</h3>
+                <pre th:text="${invocation.requestJson}">{}</pre>
+            </article>
+            <article th:if="${invocation.success}">
+                <h3>响应参数</h3>
+                <pre th:text="${invocation.responseJson}">{}</pre>
+            </article>
+            <article th:if="${!invocation.success}">
+                <h3>错误信息</h3>
+                <pre th:text="${invocation.errorMessage}">error</pre>
+            </article>
+        </div>
+    </section>
+</main>
+<script>
+    (function () {
+        var paymentMethodDataExamples = {
+            CASHAPP: {
+                cashappAccount: "$123",
+                email: "lily_brown_1782457030419@test.com"
+            },
+            CARD: {
+                number: "4000056655665556",
+                expMonth: "06",
+                expYear: "2029",
+                cvc: "123",
+                email: "lily_brown_1782457030419@test.com",
+                holderName: "Lily Brown"
+            },
+            PAY_PAL: {
+                paypalEmail: "lily_brown_1782457030419@test.com"
+            },
+            ACH_DEBIT: {
+                accountNumber: "6205500000000000004",
+                routingNumber: "641110"
+            },
+            UPI: {
+                bankName: "scott's bank",
+                bankCode: "641110",
+                cardNo: "6200000000000005"
+            }
+        };
+
+        function field(name) {
+            return document.querySelector('[data-field-name="' + name + '"]');
+        }
+
+        function control(name) {
+            return document.querySelector('[name="params[' + name + ']"]');
+        }
+
+        function prettyJson(value) {
+            return JSON.stringify(value, null, 2);
+        }
+
+        function setupCustomerMode() {
+            var mode = control("customerMode");
+            if (!mode) {
+                return;
+            }
+            var customerIdField = field("customerId");
+            var customerField = field("customer");
+
+            function sync() {
+                var useCustomerId = mode.value === "customerId";
+                if (customerIdField) {
+                    customerIdField.classList.toggle("is-hidden", !useCustomerId);
+                }
+                if (customerField) {
+                    customerField.classList.toggle("is-hidden", useCustomerId);
+                }
+            }
+
+            mode.addEventListener("change", sync);
+            sync();
+        }
+
+        function setupPaymentMethodData() {
+            var method = control("paymentMethod");
+            var data = control("paymentMethodData");
+            if (!method || !data) {
+                return;
+            }
+
+            method.addEventListener("change", function () {
+                var example = paymentMethodDataExamples[method.value];
+                if (example) {
+                    data.value = prettyJson(example);
+                }
+            });
+        }
+
+        setupCustomerMode();
+        setupPaymentMethodData();
+    })();
+</script>
+</body>
+</html>

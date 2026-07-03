@@ -48,6 +48,7 @@
         <common-random.version>1.0.6</common-random.version>
         <spring-boot.version>2.7.18</spring-boot.version>
         <maven.pmd.plugin.version>3.11.0</maven.pmd.plugin.version>
+        <spring-boot.run.skip>true</spring-boot.run.skip>
     </properties>
 
     <dependencies>
@@ -109,6 +110,12 @@
             <version>${spring-boot.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <version>${spring-boot.version}</version>
+            <optional>true</optional>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -161,7 +168,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${spring-boot.run.skip}</skip>
                 </configuration>
             </plugin>
             <plugin>
@@ -227,6 +234,12 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>demo</id>
+            <properties>
+                <spring-boot.run.skip>false</spring-boot.run.skip>
+            </properties>
         </profile>
     </profiles>
 </project>

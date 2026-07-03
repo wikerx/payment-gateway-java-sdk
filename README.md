@@ -110,12 +110,18 @@ payment.gateway.merchant-response-private-key-path=classpath:keys/2606177036_MER
 如果商户要接收 payin / payout 异步通知，可以直接启动 SDK 示例 Spring Boot 应用：
 
 ```bash
+mvn spring-boot:run -Pdemo
+```
+
+也可以在 IDE 中直接启动 `com.scott.payment.sdk.OpenApiSdkApplication`。如果不使用 Maven `demo` profile，也可以通过标准 classpath 方式启动：
+
+```bash
 mvn -q -DskipTests package
 mvn -q dependency:build-classpath -Dmdep.outputFile=target/runtime-classpath.txt
 java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.sdk.OpenApiSdkApplication
 ```
 
-也可以在 IDE 中直接启动 `com.scott.payment.sdk.OpenApiSdkApplication`。默认地址：
+回调接收默认地址：
 
 ```text
 代收回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
@@ -128,7 +134,43 @@ java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.
 http://192.168.2.47:58080/payment-sdk/api/webhook/payout
 ```
 
-### 3. 发起真实交易
+### 3. 使用页面联调控制台
+
+SDK 示例应用内置 Thymeleaf 页面联调控制台，适合平台内部和商户沙盒联调使用。启动示例应用后访问：
+
+```text
+http://localhost:58080/payment-sdk/demo/apis
+```
+
+控制台会按 API 文档分组展示当前 SDK 已集成接口：
+
+```text
+客户：创建客户、查询客户、更新客户、删除客户、列出客户
+代收：创建收银台代收、创建直连代收、查询代收交易
+退款申请：创建退款申请、查询退款
+代付：发起代付、查询代付、取消代付
+余额查询：查询资金账户余额
+```
+
+点击 API 后会进入参数页面。页面会自动从 `merchant-config.properties` 读取 `payment.gateway.merchant-no` 展示商户号，并为订单号、邮箱、证件号等字段生成沙盒默认值。所有默认参数都可以在页面上修改，提交后由 Controller 调用现有 `OpenApiClient` 方法，并在页面下方展示：
+
+- 请求明文 JSON；
+- SDK 解密后的响应 JSON；
+- 关键响应字段说明；
+- 调用失败时的异常类型和错误信息。
+
+代收和代付创建页面已内置常用联调控件：
+
+- `customerId` 和 `customer` 通过“客户提交方式”二选一，页面会按选择隐藏另一组字段，Controller 组装请求时也只提交选中的字段；
+- 创建收银台代收通过下拉选择 `paymentMethodTypes`，提交后会组装为单元素支付方式集合；
+- 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，覆盖 `CARD`、`CASHAPP`、`PAY_PAL`、`ACH_DEBIT`、`UPI`。
+- 发起代付通过下拉选择币种和 `paymentMethod`，切换支付方式时同样会自动替换 `paymentMethodData` 示例参数。
+
+页面联调控制台使用真实 SDK 客户端，请求会发送到 `payment.gateway.base-url`。发起代收、退款、代付、取消代付等操作可能创建沙盒交易或触发网关资金类业务校验；商户联调时应使用沙盒商户配置和测试网关地址。
+
+> 页面联调控制台会读取商户号、API 私钥和 RSA 密钥配置，并允许直接发起资金类 API。只建议在本地、内网、沙盒或受控测试环境启用，不要直接暴露到公网生产环境。
+
+### 4. 发起真实交易
 
 真实请求网关时必须使用默认 HTTP 传输层：
 
@@ -177,7 +219,7 @@ mvn -q -Dtest=PayoutTradeTransferCancelTest test
 
 `src/test/java/com/scott/payment/sdk/crypto` 和 `src/test/java/com/scott/payment/sdk/jwt` 下的 reference case 用于学习 JWT、Header、请求加密、响应解密和 compact payload 五段拆分，不负责创建真实交易。`src/test/java/com/scott/payment/sdk/api/webhook` 下的 case 用于本地验证回调验签和 Controller 行为，也不会请求网关。
 
-### 4. 查询结果和余额
+### 5. 查询结果和余额
 
 创建交易后应保存平台返回的 `tradeNo`，并用查询接口确认状态：
 
