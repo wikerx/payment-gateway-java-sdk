@@ -104,6 +104,10 @@ public final class DemoApiCatalog {
                         select("paymentMethod", "支付方式", "支持 CARD、CASHAPP 等网关支付方式。", true, "CASHAPP", "", options(
                                 option("CASHAPP", "CASHAPP - Cash App"),
                                 option("CARD", "CARD - 信用卡"),
+                                option("CHECKOUT", "CHECKOUT - 信用卡收银台"),
+                                option("APPLE_PAY", "APPLE_PAY - Apple Pay"),
+                                option("GOOGLE_PAY", "GOOGLE_PAY - Google Pay"),
+                                option("PAY_PAL", "PAY_PAL - PayPal"),
                                 option("PAY_PAL", "PAY_PAL - PayPal"),
                                 option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
                                 option("UPI", "UPI - 印度 UPI"))),
@@ -324,6 +328,7 @@ public final class DemoApiCatalog {
                 option("CARD", "CARD - 信用卡"),
                 option("CASHAPP", "CASHAPP - Cash App"),
                 option("PAY_PAL", "PAY_PAL - PayPal"),
+                option("VENMO", "VENMO - venmo"),
                 option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
                 option("UPI", "UPI - 印度 UPI"));
     }

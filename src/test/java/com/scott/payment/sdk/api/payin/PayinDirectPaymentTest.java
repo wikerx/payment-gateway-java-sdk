@@ -80,7 +80,7 @@ public class PayinDirectPaymentTest {
      */
     private LocalPaymentRequest directPaymentRequest() {
         LocalPaymentRequest request = new LocalPaymentRequest();
-        request.setOrderNo(OrderNoGenerator.generate("PAYIN_CASHAPP_"));
+        request.setOrderNo(OrderNoGenerator.generate("PAYIN_CARD_"));
         request.setPayType(PaymentType.Direct);
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
@@ -90,8 +90,11 @@ public class PayinDirectPaymentTest {
         request.setCustomer(customerInfo());
         request.setMetadata("metadata");
 
-        request.setPaymentMethod(PaymentMethod.CASHAPP);
-        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CASHAPP));
+//        request.setPaymentMethod(PaymentMethod.CASHAPP);
+//        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CASHAPP));
+
+        request.setPaymentMethod(PaymentMethod.CARD);
+        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CARD));
         return request;
     }
 
@@ -128,7 +131,7 @@ public class PayinDirectPaymentTest {
             paymentMethodData.put("cashappAccount", "$123");
             paymentMethodData.put("email", "lily_brown_1782457030419@test.com");
         } else if (PaymentMethod.CARD.equals(paymentMethod)) {
-            paymentMethodData.put("number", "4000056655665556");
+            paymentMethodData.put("number", "5555555555554444");
             paymentMethodData.put("expMonth", "06");
             paymentMethodData.put("expYear", "2029");
             paymentMethodData.put("cvc", "123");
