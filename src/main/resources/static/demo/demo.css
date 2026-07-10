@@ -345,6 +345,10 @@ dd {
     overflow: hidden;
 }
 
+.return-title h1 {
+    margin-bottom: 8px;
+}
+
 .result-head {
     display: flex;
     align-items: center;
@@ -400,6 +404,63 @@ pre {
     line-height: 1.55;
 }
 
+.return-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+}
+
+.return-grid article,
+.return-params {
+    min-width: 0;
+    padding: 20px;
+    background: #ffffff;
+}
+
+.return-grid small,
+.empty-state {
+    color: var(--muted);
+}
+
+.return-grid strong {
+    display: block;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+    font-size: 16px;
+}
+
+.return-message {
+    grid-column: 1 / -1;
+}
+
+.return-params table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.return-params th,
+.return-params td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e5eaf1;
+    text-align: left;
+    vertical-align: top;
+}
+
+.return-params th {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.return-params td {
+    overflow-wrap: anywhere;
+}
+
+.empty-state {
+    margin: 0;
+}
+
 @media (max-width: 900px) {
     .shell {
         width: min(100vw - 24px, 1180px);
@@ -410,7 +471,8 @@ pre {
     .api-title,
     .workbench,
     .api-map,
-    .json-pair {
+    .json-pair,
+    .return-grid {
         display: block;
     }
 

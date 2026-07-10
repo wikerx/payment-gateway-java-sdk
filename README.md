@@ -126,13 +126,16 @@ java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.
 ```text
 代收回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
 代付回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+代收前端返回 returnUrl: http://192.168.2.114:58080/payment-sdk/demo/return
 ```
 
 如果支付网关无法访问商户本机 `localhost`，需要把 `notifyUrl` 改成网关可访问的内网 IP、公网域名或穿透地址，例如：
 
 ```text
-http://192.168.2.47:58080/payment-sdk/api/webhook/payout
+http://192.168.2.114:58080/payment-sdk/api/webhook/payout
 ```
+
+收银台代收和本地支付直连代收会默认把 `returnUrl` 指向 SDK Demo 的返回页。付款页面完成后浏览器会跳回该页面并展示 query 参数；商户仍应以异步通知或查询接口确认最终支付状态。
 
 ### 3. 使用页面联调控制台
 
@@ -255,7 +258,7 @@ CheckoutPaymentRequest request = new CheckoutPaymentRequest();
 request.setOrderNo(OrderNoGenerator.generate("PAY"));
 request.setCurrency("USD");
 request.setAmount(new BigDecimal("14.99"));
-request.setReturnUrl("https://merchant.example.com/return");
+request.setReturnUrl("http://192.168.2.114:58080/payment-sdk/demo/return");
 request.setNotifyUrl("http://localhost:58080/payment-sdk/api/webhook/payin");
 
 OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
@@ -361,6 +364,14 @@ import com.scott.payment.sdk.api.webhook.payin.PayinWebhookVerifier;
 boolean valid = new PayinWebhookVerifier().verify(timestamp, signature, request);
 ```
 
+如果商户自己编写 Controller，建议使用 HTTP 原始 query/form 参数验签：
+
+```java
+boolean valid = new PayinWebhookVerifier().verify(timestamp, signature, rawParams);
+```
+
+`amount` 必须使用回调 URL 中的原始字符串参与签名，例如 `100` 和 `100.00` 是两个不同的签名原文；SDK 内置的 `PayinWebhookController` 已经按原始参数验签。
+
 商户生产接入时应实现自己的 `PayinWebhookHandler`，用于落库、幂等、终态保护和后续业务处理：
 
 ```java
@@ -405,6 +416,14 @@ import com.scott.payment.sdk.api.webhook.payout.PayoutWebhookVerifier;
 
 boolean valid = new PayoutWebhookVerifier().verify(timestamp, signature, request);
 ```
+
+如果商户自己编写 Controller，建议使用 HTTP 原始 query/form 参数验签：
+
+```java
+boolean valid = new PayoutWebhookVerifier().verify(timestamp, signature, rawParams);
+```
+
+`amount` 必须使用回调 URL 中的原始字符串参与签名，例如 `100` 和 `100.00` 是两个不同的签名原文；SDK 内置的 `PayoutWebhookController` 已经按原始参数验签。
 
 商户生产接入时应实现自己的 `PayoutWebhookHandler`，用于落库、幂等、终态保护和后续业务处理：
 

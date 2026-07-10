@@ -113,7 +113,7 @@ public class PayinRefundCreateTest {
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
         request.setReturnUrl("https://manage.forgottenthrone.com/");
-        request.setNotifyUrl("http://192.168.2.47:58080/payment-sdk/api/webhook/payin");
+        request.setNotifyUrl("http://192.168.2.114:58080/payment-sdk/api/webhook/payin");
         request.setCustomer(customerInfo());
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");

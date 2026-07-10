@@ -4,6 +4,7 @@ import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.config.MerchantConfigLoader;
+import com.scott.payment.sdk.demo.DemoLocalUrls;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
@@ -80,21 +81,22 @@ public class PayinDirectPaymentTest {
      */
     private LocalPaymentRequest directPaymentRequest() {
         LocalPaymentRequest request = new LocalPaymentRequest();
-        request.setOrderNo(OrderNoGenerator.generate("PAYIN_CARD_"));
+        request.setOrderNo(OrderNoGenerator.generate("PAYIN_CASHAPP_"));
         request.setPayType(PaymentType.Direct);
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
-        request.setNotifyUrl("http://192.168.2.47:58080/payment-sdk/api/webhook/payin");
+        request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
+        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
         request.setClientIp("47.125.221.223");
-        request.setWebsite("http://192.168.2.47:5173");
+        request.setWebsite("http://192.168.2.114:5173");
         request.setCustomer(customerInfo());
         request.setMetadata("metadata");
 
-//        request.setPaymentMethod(PaymentMethod.CASHAPP);
-//        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CASHAPP));
+        request.setPaymentMethod(PaymentMethod.CASHAPP);
+        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CASHAPP));
 
-        request.setPaymentMethod(PaymentMethod.CARD);
-        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CARD));
+//        request.setPaymentMethod(PaymentMethod.CARD);
+//        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CARD));
         return request;
     }
 
@@ -127,16 +129,16 @@ public class PayinDirectPaymentTest {
      */
     private Map<String, Object> paymentMethodData(PaymentMethod paymentMethod) {
         Map<String, Object> paymentMethodData = new HashMap<String, Object>();
-        if (PaymentMethod.CASHAPP.equals(paymentMethod)) {
-            paymentMethodData.put("cashappAccount", "$123");
-            paymentMethodData.put("email", "lily_brown_1782457030419@test.com");
-        } else if (PaymentMethod.CARD.equals(paymentMethod)) {
+        if (PaymentMethod.CARD.equals(paymentMethod)) {
             paymentMethodData.put("number", "5555555555554444");
             paymentMethodData.put("expMonth", "06");
             paymentMethodData.put("expYear", "2029");
             paymentMethodData.put("cvc", "123");
             paymentMethodData.put("email", "lily_brown_1782457030419@test.com");
             paymentMethodData.put("holderName", "Lily Brown");
+        } else if (PaymentMethod.CASHAPP.equals(paymentMethod)) {
+            paymentMethodData.put("cashappAccount", "$123");
+            paymentMethodData.put("email", "lily_brown_1782457030419@test.com");
         } else {
             throw new IllegalArgumentException("当前本地支付示例未配置支付方式扩展参数: " + paymentMethod);
         }

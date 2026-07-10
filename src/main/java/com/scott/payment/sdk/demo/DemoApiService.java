@@ -138,6 +138,7 @@ public class DemoApiService {
         request.setAmount(money(params, "amount"));
         request.setPaymentMethod(required(params, "paymentMethod"));
         request.setPaymentMethodData(jsonMap(params, "paymentMethodData"));
+        request.setReturnUrl(text(params, "returnUrl"));
         request.setNotifyUrl(text(params, "notifyUrl"));
         request.setClientIp(text(params, "clientIp"));
         request.setWebsite(text(params, "website"));

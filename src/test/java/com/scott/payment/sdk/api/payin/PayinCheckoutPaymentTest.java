@@ -4,6 +4,7 @@ import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.config.MerchantConfigLoader;
+import com.scott.payment.sdk.demo.DemoLocalUrls;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
@@ -79,8 +80,8 @@ public class PayinCheckoutPaymentTest {
         request.setOrderNo(OrderNoGenerator.generate("PAYIN_CHECKOUT_"));
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
-        request.setReturnUrl("https://manage.forgottenthrone.com/");
-        request.setNotifyUrl("http://192.168.2.47:58080/payment-sdk/api/webhook/payin");
+        request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
+        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
         request.setCustomer(customerInfo());
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");

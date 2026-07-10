@@ -4,6 +4,8 @@ import com.scott.payment.sdk.model.webhook.PayinWebhookRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +38,24 @@ class PayinWebhookVerifierTest {
         assertThat(verifier.verify("1782901024000", "bad-signature", request)).isFalse();
     }
 
+    /**
+     * 验证使用 HTTP 原始参数验签时保留 amount 原始小数位。
+     *
+     * 代收签名包含 orderNo，amount 必须使用回调 URL 中的原始字符串参与签名。
+     */
+    @Test
+    void verify_withRawParams_shouldKeepOriginalAmountScale() {
+        PayinWebhookVerifier verifier = new PayinWebhookVerifier();
+        Map<String, String> params = payinWebhookParams("100.00");
+        String timestamp = "1783655382033";
+
+        String signSource = verifier.buildSignSource(timestamp, params);
+        String signature = verifier.sign(timestamp, params);
+
+        assertThat(signSource).isEqualTo("1783655382033pay_202607101146006001767ORDER_20260710113533754004USD100.002succeededPaid");
+        assertThat(verifier.verify(timestamp, signature, params)).isTrue();
+    }
+
     private PayinWebhookRequest payinWebhookRequest() {
         PayinWebhookRequest request = new PayinWebhookRequest();
         request.setMerNo("2606177036");
@@ -49,5 +69,20 @@ class PayinWebhookVerifierTest {
         request.setMessage("Paid");
         request.setMetadata("metadata");
         return request;
+    }
+
+    private Map<String, String> payinWebhookParams(String amount) {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        params.put("merNo", "2606177036");
+        params.put("tradeNo", "pay_202607101146006001767");
+        params.put("orderNo", "ORDER_20260710113533754004");
+        params.put("currency", "USD");
+        params.put("amount", amount);
+        params.put("paymentMethod", "CARD");
+        params.put("status", "2");
+        params.put("code", "succeeded");
+        params.put("message", "Paid");
+        params.put("metadata", "metadata");
+        return params;
     }
 }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>支付返回 - Payment Gateway Demo</title>
+    <link rel="stylesheet" th:href="@{/demo/demo.css}"/>
+</head>
+<body>
+<main class="shell">
+    <nav class="crumb">
+        <a th:href="@{/demo/apis}">API 首页</a>
+        <span>/</span>
+        <span>支付返回</span>
+    </nav>
+
+    <header class="api-title return-title">
+        <div>
+            <p class="eyebrow">PAYIN RETURN</p>
+            <h1>支付返回结果</h1>
+            <p>当前页面展示网关跳转回 returnUrl 时携带的参数；最终支付状态请以异步通知或查询接口为准。</p>
+        </div>
+        <div class="env-panel">
+            <span>RETURN URL</span>
+            <strong th:text="${returnUrl}">returnUrl</strong>
+        </div>
+    </header>
+
+    <section class="result-panel return-summary">
+        <div class="result-head ok">
+            <h2>跳转已返回本地 Demo</h2>
+            <span>RECEIVED</span>
+        </div>
+        <div class="return-grid">
+            <article>
+                <small>平台交易号</small>
+                <strong th:text="${#strings.isEmpty(tradeNo) ? '-' : tradeNo}">tradeNo</strong>
+            </article>
+            <article>
+                <small>商户订单号</small>
+                <strong th:text="${#strings.isEmpty(orderNo) ? '-' : orderNo}">orderNo</strong>
+            </article>
+            <article>
+                <small>状态</small>
+                <strong th:text="${#strings.isEmpty(status) ? '-' : status}">status</strong>
+            </article>
+            <article>
+                <small>响应码</small>
+                <strong th:text="${#strings.isEmpty(code) ? '-' : code}">code</strong>
+            </article>
+            <article class="return-message">
+                <small>说明</small>
+                <strong th:text="${#strings.isEmpty(message) ? '-' : message}">message</strong>
+            </article>
+        </div>
+    </section>
+
+    <section class="result-panel">
+        <div class="result-head">
+            <h2>返回参数</h2>
+            <span>QUERY</span>
+        </div>
+        <div class="return-params">
+            <table th:if="${!params.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>字段</th>
+                    <th>值</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${params}">
+                    <td th:text="${entry.key}">key</td>
+                    <td th:text="${entry.value}">value</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="empty-state" th:if="${params.isEmpty()}">网关没有在 returnUrl 上携带 query 参数。</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>

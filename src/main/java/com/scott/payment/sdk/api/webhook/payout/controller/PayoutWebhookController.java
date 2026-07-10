@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -48,28 +49,36 @@ public class PayoutWebhookController {
      * @param timestamp Header `t`，网关签名时间戳
      * @param signature Header `signature`，网关 SHA-256 hex 签名
      * @param request 代付回调参数
+     * @param servletRequest 原始 HTTP 请求，用于读取未经过类型转换的 query/form 参数参与验签
      * @return 验签成功返回 HTTP 200，验签失败返回 HTTP 400
      */
     @GetMapping("/payout")
     public ResponseEntity<String> receivePayout(
             @RequestHeader("t") String timestamp,
             @RequestHeader("signature") String signature,
-            PayoutWebhookRequest request) {
+            PayoutWebhookRequest request,
+            HttpServletRequest servletRequest) {
         log.info("Receive payout timestamp: {}", timestamp);
         log.info("Receive payout signature: {}", signature);
         log.info("Receive payout request: {}", JsonSupport.toJson(request));
 
+        Map<String, String> rawParams = firstValueParams(servletRequest);
         log.info("代付异步通知-收到回调: {}", JsonSupport.toLogJson(logFields(
                 "headers", logHeaders(timestamp, signature),
-                "params", OpenApiLogSanitizer.sanitizeObject(request))));
+                "params", OpenApiLogSanitizer.sanitizeObject(request),
+                "rawParams", OpenApiLogSanitizer.sanitizeObject(rawParams))));
 
-        if (!verifier.verify(timestamp, signature, request)) {
+        if (!verifier.verify(timestamp, signature, rawParams)) {
             log.warn("代付异步通知-验签失败: {}", JsonSupport.toLogJson(logFields(
                     "tradeNo", request.getTradeNo(),
                     "orderNo", request.getOrderNo(),
                     "currency", request.getCurrency(),
                     "amount", request.getAmount(),
-                    "status", request.getStatus())));
+                    "rawAmount", rawParams.get("amount"),
+                    "status", request.getStatus(),
+                    "signSource", verifier.buildSignSource(timestamp, rawParams),
+                    "expectedSignature", verifier.sign(timestamp, rawParams),
+                    "receivedSignature", signature)));
             return ResponseEntity.badRequest().body("invalid signature");
         }
 
@@ -80,6 +89,24 @@ public class PayoutWebhookController {
                 "status", request.getStatus(),
                 "code", request.getCode())));
         return ResponseEntity.ok("success");
+    }
+
+    /**
+     * 提取 GET query/form 参数首值。
+     *
+     * 网关回调用 GET 方式发送参数。验签必须使用原始字符串值，不能使用绑定后的 DTO，
+     * 否则 amount 等字段可能因为 BigDecimal 规范化丢失小数位。
+     *
+     * @param servletRequest 原始 HTTP 请求
+     * @return 参数名到首个参数值的有序 Map
+     */
+    private Map<String, String> firstValueParams(HttpServletRequest servletRequest) {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        for (Map.Entry<String, String[]> entry : servletRequest.getParameterMap().entrySet()) {
+            String[] values = entry.getValue();
+            params.put(entry.getKey(), values == null || values.length == 0 ? "" : values[0]);
+        }
+        return params;
     }
 
     private Map<String, Object> logHeaders(String timestamp, String signature) {

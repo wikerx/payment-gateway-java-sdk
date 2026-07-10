@@ -82,7 +82,7 @@ public class PayoutTradeTransferTest {
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("3.11"));
 //        Option
-        request.setNotifyUrl("http://192.168.2.47:58080/payment-sdk/api/webhook/payout");
+        request.setNotifyUrl("http://192.168.2.144:58080/payment-sdk/api/webhook/payout");
 
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");

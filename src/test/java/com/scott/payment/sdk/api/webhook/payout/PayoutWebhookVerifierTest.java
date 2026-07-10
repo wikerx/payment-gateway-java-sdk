@@ -4,6 +4,8 @@ import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +38,24 @@ class PayoutWebhookVerifierTest {
         assertThat(verifier.verify("1782901024000", "bad-signature", request)).isFalse();
     }
 
+    /**
+     * 验证使用 HTTP 原始参数验签时保留 amount 原始小数位。
+     *
+     * 网关签名使用回调 URL 中的原始字符串，商户 Controller 不能先把 amount 绑定成 BigDecimal 再拼签名。
+     */
+    @Test
+    void verify_withRawParams_shouldKeepOriginalAmountScale() {
+        PayoutWebhookVerifier verifier = new PayoutWebhookVerifier();
+        Map<String, String> params = payoutWebhookParams("100.00");
+        String timestamp = "1783655382033";
+
+        String signSource = verifier.buildSignSource(timestamp, params);
+        String signature = verifier.sign(timestamp, params);
+
+        assertThat(signSource).isEqualTo("1783655382033payout_202607101146006001767USD100.002succeededTESTING: No real money will be transferred!");
+        assertThat(verifier.verify(timestamp, signature, params)).isTrue();
+    }
+
     private PayoutWebhookRequest payoutWebhookRequest() {
         PayoutWebhookRequest request = new PayoutWebhookRequest();
         request.setMerNo("2606177036");
@@ -49,5 +69,20 @@ class PayoutWebhookVerifierTest {
         request.setMessage("Failed");
         request.setMetadata("metadata");
         return request;
+    }
+
+    private Map<String, String> payoutWebhookParams(String amount) {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        params.put("merNo", "2606177036");
+        params.put("tradeNo", "payout_202607101146006001767");
+        params.put("orderNo", "PAYOUT_20260710113533754004");
+        params.put("currency", "USD");
+        params.put("amount", amount);
+        params.put("paymentMethod", "VENMO");
+        params.put("status", "2");
+        params.put("code", "succeeded");
+        params.put("message", "TESTING: No real money will be transferred!");
+        params.put("metadata", "metadata");
+        return params;
     }
 }
