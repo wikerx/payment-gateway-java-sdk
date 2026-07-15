@@ -4,6 +4,8 @@ import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +38,24 @@ class PayoutWebhookVerifierTest {
         assertThat(verifier.verify("1782901024000", "bad-signature", request)).isFalse();
     }
 
+    /**
+     * 验证代付回调验签保留网关原始金额字符串。
+     *
+     * 网关回调 URL 中 amount=19.00 时，签名原文必须使用 19.00，不能按数值转换成 19。
+     */
+    @Test
+    void verify_withRawAmountScale_shouldKeepGatewayAmountText() {
+        PayoutWebhookVerifier verifier = new PayoutWebhookVerifier();
+        Map<String, String> params = payoutWebhookParams("19.00");
+        String timestamp = "1784111725000";
+
+        String signSource = verifier.buildSignSource(timestamp, params);
+        String signature = verifier.sign(timestamp, params);
+
+        assertThat(signSource).isEqualTo("1784111725000payout_202607151832120212391USD19.003failFail");
+        assertThat(verifier.verify(timestamp, signature, params)).isTrue();
+    }
+
     private PayoutWebhookRequest payoutWebhookRequest() {
         PayoutWebhookRequest request = new PayoutWebhookRequest();
         request.setMerNo("2606177036");
@@ -49,5 +69,21 @@ class PayoutWebhookVerifierTest {
         request.setMessage("Failed");
         request.setMetadata("metadata");
         return request;
+    }
+
+    private Map<String, String> payoutWebhookParams(String amount) {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        params.put("merNo", "2607039255");
+        params.put("tradeNo", "payout_202607151832120212391");
+        params.put("orderNo", "dfu202607151832009826");
+        params.put("currency", "USD");
+        params.put("amount", amount);
+        params.put("paymentMethod", "PAY_PAL");
+        params.put("completionDate", "2026-07-15T10:35:25");
+        params.put("status", "3");
+        params.put("code", "fail");
+        params.put("message", "Fail");
+        params.put("metadata", "myParam=1");
+        return params;
     }
 }

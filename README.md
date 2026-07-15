@@ -353,6 +353,8 @@ GET http://localhost:58080/payment-sdk/api/webhook/payout
 t + tradeNo + orderNo + currency + amount + status + code + message
 ```
 
+`amount` 必须使用网关回调 URL 中的原始字符串参与验签。比如网关传 `amount=19.00`，签名原文就必须使用 `19.00`，不能转成 `19`。SDK 内置 Controller 已经使用原始 query/form 参数验签。
+
 SDK 中对应的验签类：
 
 ```java
@@ -397,6 +399,8 @@ public class MerchantPayinWebhookHandler implements PayinWebhookHandler {
 ```text
 t + tradeNo + currency + amount + status + code + message
 ```
+
+`amount` 必须使用网关回调 URL 中的原始字符串参与验签。比如网关传 `amount=19.00`，签名原文就必须使用 `19.00`，不能转成 `19`。SDK 内置 Controller 已经使用原始 query/form 参数验签。
 
 SDK 中对应的验签类：
 

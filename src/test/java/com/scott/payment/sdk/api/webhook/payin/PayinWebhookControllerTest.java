@@ -7,6 +7,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +63,40 @@ class PayinWebhookControllerTest {
     }
 
     /**
+     * 验证 Controller 使用原始 HTTP 参数验签，避免 amount=19.00 被 BigDecimal 改写后导致签名失败。
+     */
+    @Test
+    void receivePayin_withScaledRawAmount_shouldVerifyAgainstRawParams() throws Exception {
+        PayinWebhookVerifier verifier = new PayinWebhookVerifier();
+        CountingPayinWebhookHandler handler = new CountingPayinWebhookHandler();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(new PayinWebhookController(verifier, handler))
+                .build();
+        Map<String, String> params = payinWebhookParams("19.00");
+        String timestamp = "1784111725000";
+        String signature = verifier.sign(timestamp, params);
+
+        mockMvc.perform(get("/api/webhook/payin")
+                        .header("t", timestamp)
+                        .header("signature", signature)
+                        .param("merNo", params.get("merNo"))
+                        .param("tradeNo", params.get("tradeNo"))
+                        .param("orderNo", params.get("orderNo"))
+                        .param("currency", params.get("currency"))
+                        .param("amount", params.get("amount"))
+                        .param("paymentMethod", params.get("paymentMethod"))
+                        .param("status", params.get("status"))
+                        .param("code", params.get("code"))
+                        .param("message", params.get("message"))
+                        .param("metadata", params.get("metadata")))
+                .andExpect(status().isOk())
+                .andExpect(content().string("success"));
+
+        assertThat(handler.count()).isEqualTo(1);
+        assertThat(handler.lastRequest().getAmount()).isEqualByComparingTo(new BigDecimal("19.00"));
+    }
+
+    /**
      * 验证代收异步通知验签失败时返回 400 且不调用业务处理器。
      */
     @Test
@@ -99,6 +135,21 @@ class PayinWebhookControllerTest {
         request.setMessage("Paid");
         request.setMetadata("metadata");
         return request;
+    }
+
+    private Map<String, String> payinWebhookParams(String amount) {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        params.put("merNo", "2607039255");
+        params.put("tradeNo", "pay_202607151832120212391");
+        params.put("orderNo", "PAYIN_202607151832009826");
+        params.put("currency", "USD");
+        params.put("amount", amount);
+        params.put("paymentMethod", "PAY_PAL");
+        params.put("status", "3");
+        params.put("code", "fail");
+        params.put("message", "Fail");
+        params.put("metadata", "myParam=1");
+        return params;
     }
 
     private static final class CountingPayinWebhookHandler implements PayinWebhookHandler {

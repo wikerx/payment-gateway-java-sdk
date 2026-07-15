@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 /**
  * @author : scott
@@ -27,6 +28,8 @@ public class PayinWebhookVerifier {
      * 校验代收异步通知签名。
      *
      * 该方法不修改任何业务状态；签名不匹配时返回 false，由 Controller 决定 HTTP 响应。
+     * 如果是在 Spring Controller 中接收网关 GET 回调，优先使用 {@link #verify(String, String, Map)}，
+     * 避免 amount 等字段在绑定为 BigDecimal 后丢失原始小数位导致验签不一致。
      *
      * @param timestamp Header `t`，网关生成签名时使用的毫秒时间戳
      * @param signature Header `signature`，网关传入的 SHA-256 hex 签名
@@ -44,10 +47,31 @@ public class PayinWebhookVerifier {
     }
 
     /**
+     * 使用 HTTP 原始 query/form 参数校验代收异步通知签名。
+     *
+     * 网关签名时使用回调 URL 中的原始字段字符串，例如 amount=19.00 必须按 19.00 拼接，
+     * 不能按数值转换后的 19 拼接。商户 Controller 接收 GET 回调时应优先调用本方法。
+     *
+     * @param timestamp Header `t`，网关生成签名时使用的毫秒时间戳
+     * @param signature Header `signature`，网关传入的 SHA-256 hex 签名
+     * @param params 原始 query/form 参数首值 Map
+     * @return true 表示签名一致，false 表示缺少必要参数或签名不一致
+     */
+    public boolean verify(String timestamp, String signature, Map<String, String> params) {
+        if (StringUtils.isBlank(timestamp) || StringUtils.isBlank(signature) || params == null) {
+            return false;
+        }
+        String expected = sign(timestamp, params);
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                signature.trim().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
      * 计算代收异步通知签名。
      *
      * 签名原文来自网关当前实现：t + tradeNo + orderNo + currency + amount + status + code + message。
-     * amount 使用 BigDecimal.stripTrailingZeros().toPlainString()，避免科学计数法影响商户本地验签。
+     * amount 使用 BigDecimal.toPlainString()，避免科学计数法，同时保留 19.00 这类原始小数位。
      *
      * @param timestamp Header `t`
      * @param request 代收回调参数
@@ -55,6 +79,18 @@ public class PayinWebhookVerifier {
      */
     public String sign(String timestamp, PayinWebhookRequest request) {
         String signSource = buildSignSource(timestamp, request);
+        return sha256Hex(signSource);
+    }
+
+    /**
+     * 使用 HTTP 原始 query/form 参数计算代收异步通知签名。
+     *
+     * @param timestamp Header `t`
+     * @param params 原始 query/form 参数首值 Map
+     * @return SHA-256 hex 小写签名
+     */
+    public String sign(String timestamp, Map<String, String> params) {
+        String signSource = buildSignSource(timestamp, params);
         return sha256Hex(signSource);
     }
 
@@ -79,16 +115,41 @@ public class PayinWebhookVerifier {
     }
 
     /**
+     * 使用 HTTP 原始 query/form 参数构建代收异步通知签名原文。
+     *
+     * 当前网关代收回调签名规则为：
+     * t + tradeNo + orderNo + currency + amount + status + code + message。
+     *
+     * @param timestamp Header `t`
+     * @param params 原始 query/form 参数首值 Map
+     * @return 签名原文
+     */
+    public String buildSignSource(String timestamp, Map<String, String> params) {
+        return StringUtils.defaultString(timestamp)
+                + param(params, "tradeNo")
+                + param(params, "orderNo")
+                + param(params, "currency")
+                + param(params, "amount")
+                + param(params, "status")
+                + param(params, "code")
+                + param(params, "message");
+    }
+
+    /**
      * 将金额转换为签名使用的稳定字符串。
      *
      * @param amount 回调金额
-     * @return 去除尾随 0 后的普通十进制文本
+     * @return 保留小数位的普通十进制文本
      */
     private String amountText(BigDecimal amount) {
         if (amount == null) {
             return "";
         }
-        return amount.stripTrailingZeros().toPlainString();
+        return amount.toPlainString();
+    }
+
+    private String param(Map<String, String> params, String name) {
+        return StringUtils.defaultString(params.get(name));
     }
 
     /**
