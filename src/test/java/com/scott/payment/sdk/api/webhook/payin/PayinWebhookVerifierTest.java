@@ -39,20 +39,20 @@ class PayinWebhookVerifierTest {
     }
 
     /**
-     * 验证使用 HTTP 原始参数验签时保留 amount 原始小数位。
+     * 验证代收回调验签保留网关原始金额字符串。
      *
-     * 代收签名包含 orderNo，amount 必须使用回调 URL 中的原始字符串参与签名。
+     * 网关回调 URL 中 amount=19.00 时，签名原文必须使用 19.00，不能按数值转换成 19。
      */
     @Test
-    void verify_withRawParams_shouldKeepOriginalAmountScale() {
+    void verify_withRawAmountScale_shouldKeepGatewayAmountText() {
         PayinWebhookVerifier verifier = new PayinWebhookVerifier();
-        Map<String, String> params = payinWebhookParams("100.00");
-        String timestamp = "1783655382033";
+        Map<String, String> params = payinWebhookParams("19.00");
+        String timestamp = "1784111725000";
 
         String signSource = verifier.buildSignSource(timestamp, params);
         String signature = verifier.sign(timestamp, params);
 
-        assertThat(signSource).isEqualTo("1783655382033pay_202607101146006001767ORDER_20260710113533754004USD100.002succeededPaid");
+        assertThat(signSource).isEqualTo("1784111725000pay_202607151832120212391PAYIN_202607151832009826USD19.003failFail");
         assertThat(verifier.verify(timestamp, signature, params)).isTrue();
     }
 
@@ -73,16 +73,16 @@ class PayinWebhookVerifierTest {
 
     private Map<String, String> payinWebhookParams(String amount) {
         Map<String, String> params = new LinkedHashMap<String, String>();
-        params.put("merNo", "2606177036");
-        params.put("tradeNo", "pay_202607101146006001767");
-        params.put("orderNo", "ORDER_20260710113533754004");
+        params.put("merNo", "2607039255");
+        params.put("tradeNo", "pay_202607151832120212391");
+        params.put("orderNo", "PAYIN_202607151832009826");
         params.put("currency", "USD");
         params.put("amount", amount);
-        params.put("paymentMethod", "CARD");
-        params.put("status", "2");
-        params.put("code", "succeeded");
-        params.put("message", "Paid");
-        params.put("metadata", "metadata");
+        params.put("paymentMethod", "PAY_PAL");
+        params.put("status", "3");
+        params.put("code", "fail");
+        params.put("message", "Fail");
+        params.put("metadata", "myParam=1");
         return params;
     }
 }

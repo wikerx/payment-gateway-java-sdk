@@ -49,9 +49,8 @@ public class PayinWebhookVerifier {
     /**
      * 使用 HTTP 原始 query/form 参数校验代收异步通知签名。
      *
-     * 网关签名时使用的是发送前的字段字符串，例如 amount 可能是 "100"、"100.00" 或 "3.10"。
-     * Controller 接收回调时应优先把 request.getParameterMap() 转成首值 Map 后调用本方法，
-     * 不要先把 amount 绑定成 BigDecimal 再验签，否则可能因为小数位规范化造成签名不一致。
+     * 网关签名时使用回调 URL 中的原始字段字符串，例如 amount=19.00 必须按 19.00 拼接，
+     * 不能按数值转换后的 19 拼接。商户 Controller 接收 GET 回调时应优先调用本方法。
      *
      * @param timestamp Header `t`，网关生成签名时使用的毫秒时间戳
      * @param signature Header `signature`，网关传入的 SHA-256 hex 签名
@@ -72,7 +71,7 @@ public class PayinWebhookVerifier {
      * 计算代收异步通知签名。
      *
      * 签名原文来自网关当前实现：t + tradeNo + orderNo + currency + amount + status + code + message。
-     * amount 使用 BigDecimal.stripTrailingZeros().toPlainString()，避免科学计数法影响商户本地验签。
+     * amount 使用 BigDecimal.toPlainString()，避免科学计数法，同时保留 19.00 这类原始小数位。
      *
      * @param timestamp Header `t`
      * @param request 代收回调参数
@@ -140,13 +139,13 @@ public class PayinWebhookVerifier {
      * 将金额转换为签名使用的稳定字符串。
      *
      * @param amount 回调金额
-     * @return 去除尾随 0 后的普通十进制文本
+     * @return 保留小数位的普通十进制文本
      */
     private String amountText(BigDecimal amount) {
         if (amount == null) {
             return "";
         }
-        return amount.stripTrailingZeros().toPlainString();
+        return amount.toPlainString();
     }
 
     private String param(Map<String, String> params, String name) {

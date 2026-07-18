@@ -63,7 +63,7 @@ class PayoutWebhookControllerTest {
     }
 
     /**
-     * 验证 Controller 使用原始 HTTP 参数验签，避免 amount 被 BigDecimal 改写后导致签名失败。
+     * 验证 Controller 使用原始 HTTP 参数验签，避免 amount=19.00 被 BigDecimal 改写后导致签名失败。
      */
     @Test
     void receivePayout_withScaledRawAmount_shouldVerifyAgainstRawParams() throws Exception {
@@ -72,8 +72,8 @@ class PayoutWebhookControllerTest {
         MockMvc mockMvc = MockMvcBuilders
                 .standaloneSetup(new PayoutWebhookController(verifier, handler))
                 .build();
-        Map<String, String> params = payoutWebhookParams("100.00");
-        String timestamp = "1783655382033";
+        Map<String, String> params = payoutWebhookParams("19.00");
+        String timestamp = "1784111725000";
         String signature = verifier.sign(timestamp, params);
 
         mockMvc.perform(get("/api/webhook/payout")
@@ -85,6 +85,7 @@ class PayoutWebhookControllerTest {
                         .param("currency", params.get("currency"))
                         .param("amount", params.get("amount"))
                         .param("paymentMethod", params.get("paymentMethod"))
+                        .param("completionDate", params.get("completionDate"))
                         .param("status", params.get("status"))
                         .param("code", params.get("code"))
                         .param("message", params.get("message"))
@@ -93,7 +94,7 @@ class PayoutWebhookControllerTest {
                 .andExpect(content().string("success"));
 
         assertThat(handler.count()).isEqualTo(1);
-        assertThat(handler.lastRequest().getAmount()).isEqualByComparingTo(new BigDecimal("100.00"));
+        assertThat(handler.lastRequest().getAmount()).isEqualByComparingTo(new BigDecimal("19.00"));
     }
 
     /**
@@ -138,16 +139,17 @@ class PayoutWebhookControllerTest {
 
     private Map<String, String> payoutWebhookParams(String amount) {
         Map<String, String> params = new LinkedHashMap<String, String>();
-        params.put("merNo", "2606177036");
-        params.put("tradeNo", "payout_202607101146006001767");
-        params.put("orderNo", "PAYOUT_20260710113533754004");
+        params.put("merNo", "2607039255");
+        params.put("tradeNo", "payout_202607151832120212391");
+        params.put("orderNo", "dfu202607151832009826");
         params.put("currency", "USD");
         params.put("amount", amount);
-        params.put("paymentMethod", "VENMO");
-        params.put("status", "2");
-        params.put("code", "succeeded");
-        params.put("message", "TESTING: No real money will be transferred!");
-        params.put("metadata", "metadata");
+        params.put("paymentMethod", "PAY_PAL");
+        params.put("completionDate", "2026-07-15T10:35:25");
+        params.put("status", "3");
+        params.put("code", "fail");
+        params.put("message", "Fail");
+        params.put("metadata", "myParam=1");
         return params;
     }
 

@@ -95,7 +95,7 @@ public class PayinWebhookController {
      * 提取 GET query/form 参数首值。
      *
      * 网关回调用 GET 方式发送参数。验签必须使用原始字符串值，不能使用绑定后的 DTO，
-     * 否则 amount 等字段可能因为 BigDecimal 规范化丢失小数位。
+     * 否则 amount=19.00 可能因为 BigDecimal 规范化变成 19，导致签名失败。
      *
      * @param servletRequest 原始 HTTP 请求
      * @return 参数名到首个参数值的有序 Map
