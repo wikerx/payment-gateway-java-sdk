@@ -207,38 +207,38 @@
         </plugins>
     </build>
 
+    <!--环境配置-->
     <profiles>
+        <!--开发环境配置-->
         <profile>
-            <id>p3c</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-pmd-plugin</artifactId>
-                        <version>${maven.pmd.plugin.version}</version>
-                        <configuration>
-                            <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
-                            <targetJdk>${maven.compiler.target}</targetJdk>
-                            <printFailingErrors>true</printFailingErrors>
-                            <rulesets>
-                                <ruleset>config/p3c/p3c-ruleset.xml</ruleset>
-                            </rulesets>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.alibaba.p3c</groupId>
-                                <artifactId>p3c-pmd</artifactId>
-                                <version>${p3c-pmd.version}</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>demo</id>
+            <id>dev</id>
             <properties>
-                <spring-boot.run.skip>false</spring-boot.run.skip>
+                <profiles.active>dev</profiles.active>
+            </properties>
+            <!--当前使用环境配置-->
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <!--测试环境配置-->
+        <profile>
+            <id>test</id>
+            <properties>
+                <profiles.active>test</profiles.active>
+            </properties>
+        </profile>
+        <!--UAT环境配置-->
+        <profile>
+            <id>uat</id>
+            <properties>
+                <profiles.active>uat</profiles.active>
+            </properties>
+        </profile>
+        <!--生产环境配置-->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <profiles.active>prod</profiles.active>
             </properties>
         </profile>
     </profiles>
