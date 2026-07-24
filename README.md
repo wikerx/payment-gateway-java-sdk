@@ -124,10 +124,14 @@ java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.
 回调接收默认地址：
 
 ```text
-代收回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
-代付回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+代收 V1 回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
+代付 V1 回调 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+代收 V2 回调 notifyUrl: http://localhost:58080/payment-sdk/api/v2/webhook/payin
+代付 V2 回调 notifyUrl: http://localhost:58080/payment-sdk/api/v2/webhook/payout
 代收前端返回 returnUrl: http://192.168.2.114:58080/payment-sdk/demo/return
 ```
+
+V2 回调使用 `POST`，Header 包含 `Authorization: Bearer {callbackJwt}`、`X-Livemode`、`X-Callback-Version`、`X-Callback-Event-Id`。商户号不再通过 `X-Merchant-No` 传递，商户应从 JWT 的 `merchantId` claim 获取并验签校验。
 
 如果支付网关无法访问商户本机 `localhost`，需要把 `notifyUrl` 改成网关可访问的内网 IP、公网域名或穿透地址，例如：
 
@@ -335,6 +339,8 @@ server:
 ```http
 GET http://localhost:58080/payment-sdk/api/webhook/payin
 GET http://localhost:58080/payment-sdk/api/webhook/payout
+POST http://localhost:58080/payment-sdk/api/v2/webhook/payin
+POST http://localhost:58080/payment-sdk/api/v2/webhook/payout
 ```
 
 商户如果把 Controller 复制到自己的项目中，可以按自己的服务端口和 context-path 调整最终 notifyUrl。

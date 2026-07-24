@@ -4,6 +4,8 @@ import com.scott.payment.sdk.api.webhook.payin.PayinWebhookHandler;
 import com.scott.payment.sdk.api.webhook.payin.handler.LoggingPayinWebhookHandler;
 import com.scott.payment.sdk.api.webhook.payout.PayoutWebhookHandler;
 import com.scott.payment.sdk.api.webhook.payout.handler.LoggingPayoutWebhookHandler;
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2Verifier;
+import com.scott.payment.sdk.config.MerchantConfigLoader;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,5 +48,11 @@ public class OpenApiWebhookConfiguration {
     @ConditionalOnMissingBean(PayoutWebhookHandler.class)
     public PayoutWebhookHandler payoutWebhookHandler() {
         return new LoggingPayoutWebhookHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(WebhookV2Verifier.class)
+    public WebhookV2Verifier webhookV2Verifier() {
+        return new WebhookV2Verifier(MerchantConfigLoader.load());
     }
 }

@@ -29,7 +29,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/webhook")
+@RequestMapping({"/api/webhook", "/api/v1/webhook"})
 public class PayinWebhookController {
 
     private final PayinWebhookVerifier verifier;
@@ -58,18 +58,14 @@ public class PayinWebhookController {
             @RequestHeader("signature") String signature,
             PayinWebhookRequest request,
             HttpServletRequest servletRequest) {
-        log.info("Receive payin timestamp: {}", timestamp);
-        log.info("Receive payin signature: {}", signature);
-        log.info("Receive payin request: {}", JsonSupport.toJson(request));
-
         Map<String, String> rawParams = firstValueParams(servletRequest);
-        log.info("代收异步通知-收到回调: {}", JsonSupport.toLogJson(logFields(
+        log.info("代收异步通知V1-收到网关回调: {}", JsonSupport.toLogJson(logFields(
                 "headers", logHeaders(timestamp, signature),
                 "params", OpenApiLogSanitizer.sanitizeObject(request),
                 "rawParams", OpenApiLogSanitizer.sanitizeObject(rawParams))));
 
         if (!verifier.verify(timestamp, signature, rawParams)) {
-            log.warn("代收异步通知-验签失败: {}", JsonSupport.toLogJson(logFields(
+            log.warn("代收异步通知V1-验签失败: {}", JsonSupport.toLogJson(logFields(
                     "tradeNo", request.getTradeNo(),
                     "orderNo", request.getOrderNo(),
                     "currency", request.getCurrency(),
@@ -83,7 +79,7 @@ public class PayinWebhookController {
         }
 
         handler.handle(request);
-        log.info("代收异步通知-处理完成: {}", JsonSupport.toLogJson(logFields(
+        log.info("代收异步通知V1-处理完成: {}", JsonSupport.toLogJson(logFields(
                 "tradeNo", request.getTradeNo(),
                 "orderNo", request.getOrderNo(),
                 "status", request.getStatus(),

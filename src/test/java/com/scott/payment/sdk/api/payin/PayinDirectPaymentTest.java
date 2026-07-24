@@ -86,7 +86,11 @@ public class PayinDirectPaymentTest {
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
         request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
-        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
+//        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
+//        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/webhook/payin");
+//        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v1/webhook/payin");
+        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v2/webhook/payin");
+
         request.setClientIp("47.125.221.223");
         request.setWebsite("http://192.168.2.114:5173");
         request.setCustomer(customerInfo());

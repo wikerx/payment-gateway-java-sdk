@@ -444,9 +444,13 @@ http://localhost:58080/payment-sdk
 回调地址：
 
 ```text
-代收 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
-代付 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+代收 V1 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payin
+代付 V1 notifyUrl: http://localhost:58080/payment-sdk/api/webhook/payout
+代收 V2 notifyUrl: http://localhost:58080/payment-sdk/api/v2/webhook/payin
+代付 V2 notifyUrl: http://localhost:58080/payment-sdk/api/v2/webhook/payout
 ```
+
+V2 回调 Header 包含 `Authorization: Bearer {callbackJwt}`、`X-Livemode`、`X-Callback-Version`、`X-Callback-Event-Id`。商户号只在 JWT `merchantId` claim 中提供，不再额外通过明文商户号 Header 传递。
 
 如果网关无法访问商户本机 `localhost`，请改成网关可访问的域名、IP 或内网穿透地址。
 

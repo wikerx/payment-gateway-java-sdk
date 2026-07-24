@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @classname : MerchantConfigLoaderTest
  * @date : 2026-06-30 10:28
  * @email : scott_x@163.com
- * @description : 商户配置加载测试，负责验证 SDK 只读取 merchant-config.properties，并能解析 2606177036 沙盒商户的文本密钥和 PEM 文件。
+ * @description : 商户配置加载测试，负责验证 SDK 只读取 merchant-config.properties，并能解析沙盒商户的文本密钥和 PEM 文件。
  *                本测试不将 API 私钥或商户响应私钥写入日志，不新增数据库数据，也不发起真实网关请求。
  * @status : modify
  */
@@ -50,7 +50,7 @@ class MerchantConfigLoaderTest {
     void shouldLoadTextKeyConfig() {
         OpenApiClientConfig config = MerchantConfigLoader.load();
 
-        assertThat(config.getMerchantId()).isEqualTo("2606177036");
+        assertThat(config.getMerchantId()).isEqualTo("2607249795");
         assertThat(config.getMerchantJwtSecret()).hasSizeGreaterThanOrEqualTo(32);
         assertThat(config.getPlatformPublicKey()).isNotBlank();
         assertThat(config.getMerchantResponsePrivateKey()).isNotBlank();
@@ -67,9 +67,9 @@ class MerchantConfigLoaderTest {
     @Test
     void shouldNormalizeExportedPemWithMetadata() {
         OpenApiClientConfig config = MerchantConfigLoader.load();
-        String platformPublicPem = "merNo=2606177036\nkeyVersion=v2\n\n"
+        String platformPublicPem = "merNo=2607249795\nkeyVersion=v2\n\n"
                 + RsaKeyUtils.toPublicKeyPem(config.getPlatformPublicKey());
-        String responsePrivatePem = "merNo=2606177036\nkeyVersion=v2\n\n"
+        String responsePrivatePem = "merNo=2607249795\nkeyVersion=v2\n\n"
                 + RsaKeyUtils.toPrivateKeyPem(config.getMerchantResponsePrivateKey());
 
         assertThat(KeyFileLoader.normalizePem(platformPublicPem)).isEqualTo(config.getPlatformPublicKey());

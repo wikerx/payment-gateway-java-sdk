@@ -33,12 +33,12 @@ public final class OpenApiConstants {
     /**
      * HTTP 默认连接超时时间，单位毫秒。
      */
-    public static final int HTTP_CONNECT_TIMEOUT_MS = 3000;
+    public static final int HTTP_CONNECT_TIMEOUT_MS = 30000;
 
     /**
      * HTTP 默认响应读取超时时间，单位毫秒。
      */
-    public static final int HTTP_READ_TIMEOUT_MS = 10000;
+    public static final int HTTP_READ_TIMEOUT_MS = 30000;
 
     /**
      * SDK 主请求 Header Map 容量。
