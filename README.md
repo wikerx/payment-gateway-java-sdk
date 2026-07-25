@@ -132,6 +132,7 @@ java -cp "target/classes:$(cat target/runtime-classpath.txt)" com.scott.payment.
 ```
 
 V2 回调使用 `POST`，Header 包含 `Authorization: Bearer {callbackJwt}`、`X-Livemode`、`X-Callback-Version`、`X-Callback-Event-Id`。商户号不再通过 `X-Merchant-No` 传递，商户应从 JWT 的 `merchantId` claim 获取并验签校验。
+SDK 内置 V2 Controller 会完成 Header/JWT 验签、Body `data` 解密、`tradeNo` 一致性校验；校验通过后返回纯文本 `success`，否则返回非 `success` 结果，便于网关继续重试。
 
 如果支付网关无法访问商户本机 `localhost`，需要把 `notifyUrl` 改成网关可访问的内网 IP、公网域名或穿透地址，例如：
 
@@ -384,6 +385,7 @@ boolean valid = new PayinWebhookVerifier().verify(timestamp, signature, rawParam
 
 ```java
 import com.scott.payment.sdk.api.webhook.payin.PayinWebhookHandler;
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2Claims;
 import com.scott.payment.sdk.model.webhook.PayinWebhookRequest;
 import org.springframework.stereotype.Component;
 
@@ -397,8 +399,17 @@ public class MerchantPayinWebhookHandler implements PayinWebhookHandler {
         // 3. 做终态保护，避免重复通知或旧通知覆盖新状态
         // 4. 按业务需要更新订单状态或触发后续流程
     }
+
+    @Override
+    public void handle(PayinWebhookRequest request, WebhookV2Claims claims) {
+        // V2 回调可使用 claims.getEventId() 做事件幂等。
+        // 默认实现会委托 handle(request)，这里按商户自己的业务需要覆盖。
+        handle(request);
+    }
 }
 ```
+
+V2 代收回调中 `tradeDate`、`expireTime` 可能是毫秒时间戳文本；SDK 使用 `String` 承接，商户可按本地展示和对账需要自行转换。
 
 ### 代付异步通知
 
@@ -439,6 +450,7 @@ boolean valid = new PayoutWebhookVerifier().verify(timestamp, signature, rawPara
 
 ```java
 import com.scott.payment.sdk.api.webhook.payout.PayoutWebhookHandler;
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2Claims;
 import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
 import org.springframework.stereotype.Component;
 
@@ -452,10 +464,51 @@ public class MerchantPayoutWebhookHandler implements PayoutWebhookHandler {
         // 3. 做终态保护，避免重复通知或旧通知覆盖新状态
         // 4. 按业务需要更新订单状态或触发后续流程
     }
+
+    @Override
+    public void handle(PayoutWebhookRequest request, WebhookV2Claims claims) {
+        // V2 回调可使用 claims.getEventId() 做事件幂等。
+        // 默认实现会委托 handle(request)，这里按商户自己的业务需要覆盖。
+        handle(request);
+    }
 }
 ```
 
 如果商户没有提供 `PayoutWebhookHandler` Bean，SDK 会使用 `LoggingPayoutWebhookHandler` 仅记录日志，不做任何资金或状态修改。生产环境不要依赖默认日志处理器完成业务处理。
+V2 代付回调中 `completionDate` 可能是毫秒时间戳文本；SDK 使用 `String` 承接，商户可按本地展示和对账需要自行转换。
+
+### V2 加密回调协议
+
+商户在平台切换为 `v2` 后，网关会向商户 `notifyUrl` 发送 POST JSON：
+
+```http
+POST /payment-sdk/api/v2/webhook/payin
+Authorization: Bearer <callback jwt>
+Content-Type: application/json; charset=UTF-8
+X-Livemode: false
+X-Callback-Version: v2
+X-Callback-Event-Id: <eventId>
+
+{"data":"<protectedHeader.encryptedAesKey.iv.cipherText.tag>"}
+```
+
+V2 Header 不包含 `X-Merchant-No`。商户号只从验签通过后的 JWT `merchantId` claim 获取。
+
+JWT 使用商户 API 私钥做 `HS256` 验签，主要 claims：
+
+| Claim | 说明 |
+|---|---|
+| `iss` | 固定 `gateway` |
+| `aud` | 固定 `merchant` |
+| `merchantId` | 商户号，必须与本地配置一致 |
+| `livemode` | 环境标识，必须与 `X-Livemode` 和本地配置一致 |
+| `eventId` | 回调事件号，建议作为幂等键 |
+| `eventType` | 代收 `PAYIN_CALLBACK`，代付 `PAYOUT_CALLBACK` |
+| `tradeNo` | 平台交易号，必须与解密后的业务 JSON `tradeNo` 一致 |
+| `jti` | 当前与 `eventId` 一致 |
+| `iat` / `exp` | JWT 签发和过期时间，秒级时间戳 |
+
+V2 回调只有 HTTP 200 且响应体为纯文本 `success` 时，平台才会认为通知成功；否则会按平台重试策略继续回调。
 
 ## 退款
 
@@ -561,6 +614,8 @@ HTTP 2xx 且业务失败时，SDK 返回 `OpenApiResult<T>`，商户应根据 `c
 ## 日志
 
 SDK 只依赖 `slf4j-api`。默认日志使用 `请求头: {}`、`API调用开始: {}`、`API调用结束: {}` 等标准 key-value + JSON 格式。默认日志只输出摘要和脱敏 Header，完整 JWT、密钥、卡号、CVC、邮箱、手机号和证件号不会进入普通日志。
+Webhook V2 接收日志默认只输出 Header 摘要、Body 长度、`data` 分段摘要、eventId 和 tradeNo，不输出完整 `Authorization`、完整密文 `data` 或解密后的业务明文。
+V2 回调或响应中可能出现的 `clientSecret`、`subToken`、`name`、`firstname`、`lastname` 等字段会按敏感字段处理；商户生产环境日志不建议输出完整业务明文 payload。
 
 如需核验实际传输数据，可在 `merchant-config.properties` 中设置：
 
@@ -582,6 +637,7 @@ payment.gateway.debug-raw-log-enabled=true
 报文日志会过滤 null 字段，避免商户联调时看到大量无效参数。`requestId` 是 SDK 链路追踪字段，只出现在 `X-Request-Id` Header、`API调用开始` 和 `API调用结束` 日志中，不会放入请求或响应报文日志。
 
 该开关只建议用于沙盒联调或本地排查。开启后会打印请求明文、响应明文和完整密文 data；Authorization、卡号、CVC、邮箱、手机号、证件号和密钥类字段仍会脱敏，不建议在生产环境或包含真实持卡人数据的环境开启。
+涉及回调 payload 的排查日志建议保留 eventId、tradeNo、orderNo、status、code 等定位字段即可，不要长期保存完整明文。
 
 ### 手动拆分密文参数
 

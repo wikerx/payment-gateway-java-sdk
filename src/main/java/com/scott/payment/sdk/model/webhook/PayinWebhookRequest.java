@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  * @classname : PayinWebhookRequest
  * @date : 2026-07-02 10:28
  * @email : scott_x@163.com
- * @description : 代收异步通知请求模型，负责承载网关通过 notifyUrl 以 GET form 参数回传的代收交易结果。
+ * @description : 代收异步通知请求模型，负责承载网关通过 notifyUrl 回传的代收交易结果。
  *                本类只描述回调参数，不执行验签、幂等落库、资金入账、状态流转或外部渠道调用。
  *                amount 涉及资金金额，tradeNo/orderNo 用于商户侧幂等，status/code/message 表示网关侧处理结果。
  * @status : create
@@ -207,21 +207,4 @@ public class PayinWebhookRequest {
      */
     private String subToken;
 
-    /**
-     * 通道名称。
-     *
-     * 敏感字段：否。
-     * 是否允许为空：允许为空。
-     * 用途：白名单商户排查通道侧处理结果。
-     */
-    private String channelCode;
-
-    /**
-     * 上游订单 ID。
-     *
-     * 敏感字段：否。
-     * 是否允许为空：允许为空。
-     * 用途：白名单商户关联上游渠道订单。
-     */
-    private String channelId;
 }

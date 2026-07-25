@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  * @classname : PayoutWebhookRequest
  * @date : 2026-07-02 10:28
  * @email : scott_x@163.com
- * @description : 代付异步通知请求模型，负责承载网关通过 notifyUrl 以 GET form 参数回传的代付交易结果。
+ * @description : 代付异步通知请求模型，负责承载网关通过 notifyUrl 回传的代付交易结果。
  *                本类只描述回调参数，不执行验签、幂等落库、资金入账、状态流转或外部渠道调用。
  *                amount 涉及资金金额，status、code、message 表示网关侧最终处理结果，商户处理时必须结合 tradeNo/orderNo 做幂等保护。
  * @status : create

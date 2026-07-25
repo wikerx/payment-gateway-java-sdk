@@ -2,6 +2,7 @@ package com.scott.payment.sdk.api.webhook.payin;
 
 import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.api.webhook.payin.controller.PayinWebhookV2Controller;
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2Claims;
 import com.scott.payment.sdk.api.webhook.v2.WebhookV2TestSupport;
 import com.scott.payment.sdk.api.webhook.v2.WebhookV2Verifier;
 import com.scott.payment.sdk.model.webhook.PayinWebhookRequest;
@@ -76,6 +77,33 @@ class PayinWebhookV2ControllerTest {
         assertThat(handler.count()).isEqualTo(0);
     }
 
+    @Test
+    void receivePayinWebhook_withV2AwareHandler_shouldPassVerifiedClaims() throws Exception {
+        OpenApiClientConfig config = OpenApiTestSupport.clientConfig();
+        V2AwarePayinWebhookHandler handler = new V2AwarePayinWebhookHandler();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(new PayinWebhookV2Controller(new WebhookV2Verifier(config), handler))
+                .build();
+        PayinWebhookRequest request = payinWebhookRequest();
+        String eventId = "evt-payin-claims-001";
+        String jwt = WebhookV2TestSupport.signCallbackJwt(config, eventId, "PAYIN_CALLBACK", request.getTradeNo());
+        String body = WebhookV2TestSupport.encryptedBody(config, request);
+
+        mockMvc.perform(post("/api/v2/webhook/payin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + jwt)
+                        .header("X-Livemode", String.valueOf(config.getLivemode()))
+                        .header("X-Callback-Version", "v2")
+                        .header("X-Callback-Event-Id", eventId)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().string("success"));
+
+        assertThat(handler.count()).isEqualTo(1);
+        assertThat(handler.lastClaims().getEventId()).isEqualTo(eventId);
+        assertThat(handler.lastClaims().getMerchantId()).isEqualTo(config.getMerchantId());
+    }
+
     private PayinWebhookRequest payinWebhookRequest() {
         PayinWebhookRequest request = new PayinWebhookRequest();
         request.setMerNo(OpenApiTestSupport.merchantId());
@@ -107,6 +135,30 @@ class PayinWebhookV2ControllerTest {
 
         private PayinWebhookRequest lastRequest() {
             return lastRequest;
+        }
+    }
+
+    private static final class V2AwarePayinWebhookHandler implements PayinWebhookHandler {
+        private final AtomicInteger count = new AtomicInteger();
+        private WebhookV2Claims lastClaims;
+
+        @Override
+        public void handle(PayinWebhookRequest request) {
+            throw new AssertionError("V2 controller should pass verified claims to V2-aware handlers");
+        }
+
+        @Override
+        public void handle(PayinWebhookRequest request, WebhookV2Claims claims) {
+            this.lastClaims = claims;
+            this.count.incrementAndGet();
+        }
+
+        private int count() {
+            return count.get();
+        }
+
+        private WebhookV2Claims lastClaims() {
+            return lastClaims;
         }
     }
 }

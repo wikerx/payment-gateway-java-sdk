@@ -62,6 +62,9 @@ class OpenApiLogSanitizerTest {
     void shouldRemoveNullFieldsWhenSanitizingObject() {
         Map<String, Object> payload = new LinkedHashMap<String, Object>();
         payload.put("tradeNo", "pay_123");
+        payload.put("name", "Lily Brown");
+        payload.put("clientSecret", "seti_1234567890");
+        payload.put("subToken", "sub_1234567890");
         payload.put("redirectUrl", null);
 
         Object sanitized = OpenApiLogSanitizer.sanitizeObject(payload);
@@ -69,6 +72,9 @@ class OpenApiLogSanitizerTest {
         assertThat(sanitized).isInstanceOf(Map.class);
         Map<?, ?> sanitizedMap = (Map<?, ?>) sanitized;
         assertThat(sanitizedMap.get("tradeNo")).isEqualTo("pay_123");
+        assertThat(sanitizedMap.get("name")).isEqualTo("***");
+        assertThat(sanitizedMap.get("clientSecret")).isEqualTo("length=15");
+        assertThat(sanitizedMap.get("subToken")).isEqualTo("length=14");
         assertThat(sanitizedMap.containsKey("redirectUrl")).isFalse();
     }
 }

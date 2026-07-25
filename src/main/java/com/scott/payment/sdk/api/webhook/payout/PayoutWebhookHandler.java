@@ -1,5 +1,6 @@
 package com.scott.payment.sdk.api.webhook.payout;
 
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2Claims;
 import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
 
 /**
@@ -24,4 +25,17 @@ public interface PayoutWebhookHandler {
      * @param request 代付回调参数
      */
     void handle(PayoutWebhookRequest request);
+
+    /**
+     * 处理已通过 V2 Header JWT 验签和 Body 解密的代付异步通知。
+     *
+     * 默认委托给 V1/V2 共用的 {@link #handle(PayoutWebhookRequest)}，避免已有商户实现必须改代码。
+     * 商户如果希望使用 eventId 做幂等，可以重写本方法读取 claims.getEventId()。
+     *
+     * @param request 解密后的代付回调参数
+     * @param claims 已验签通过的 V2 JWT Claims
+     */
+    default void handle(PayoutWebhookRequest request, WebhookV2Claims claims) {
+        handle(request);
+    }
 }

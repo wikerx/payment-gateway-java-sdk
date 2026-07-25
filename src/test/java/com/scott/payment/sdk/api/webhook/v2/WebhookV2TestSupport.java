@@ -48,8 +48,11 @@ public final class WebhookV2TestSupport {
     }
 
     public static String encryptedBody(OpenApiClientConfig config, Object callbackPayload) throws Exception {
-        String encryptedData = new OpenApiPayloadCrypto().encrypt(JsonSupport.toJson(callbackPayload),
-                merchantResponsePublicKey(config));
+        return encryptedBodyFromPlainJson(config, JsonSupport.toJson(callbackPayload));
+    }
+
+    public static String encryptedBodyFromPlainJson(OpenApiClientConfig config, String plainJson) throws Exception {
+        String encryptedData = new OpenApiPayloadCrypto().encrypt(plainJson, merchantResponsePublicKey(config));
         return JsonSupport.toJson(encryptedData(encryptedData));
     }
 

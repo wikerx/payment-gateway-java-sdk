@@ -3,6 +3,7 @@ package com.scott.payment.sdk.api.webhook.v2;
 import com.scott.payment.sdk.OpenApiClientConfig;
 import com.scott.payment.sdk.exception.OpenApiValidationException;
 import com.scott.payment.sdk.model.webhook.PayinWebhookRequest;
+import com.scott.payment.sdk.model.webhook.PayoutWebhookRequest;
 import com.scott.payment.sdk.testkit.OpenApiTestSupport;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +34,86 @@ class WebhookV2VerifierTest {
 
         assertThat(result.getTradeNo()).isEqualTo("pay_123");
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("12.34"));
+    }
+
+    @Test
+    void verifyAndDecryptWithClaims_withValidCallback_shouldReturnClaimsAndPayload() throws Exception {
+        OpenApiClientConfig config = OpenApiTestSupport.clientConfig();
+        PayinWebhookRequest request = payinWebhookRequest("pay_123");
+        String eventId = "evt-verifier-claims-001";
+
+        WebhookV2VerificationResult<PayinWebhookRequest> result = new WebhookV2Verifier(config)
+                .verifyAndDecryptWithClaims(
+                        headers(config, eventId, WebhookV2TestSupport.signCallbackJwt(config, eventId, EVENT_TYPE,
+                                request.getTradeNo())),
+                        WebhookV2TestSupport.encryptedBody(config, request),
+                        EVENT_TYPE,
+                        PayinWebhookRequest.class);
+
+        assertThat(result.getPayload().getTradeNo()).isEqualTo("pay_123");
+        assertThat(result.getClaims().getEventId()).isEqualTo(eventId);
+        assertThat(result.getClaims().getMerchantId()).isEqualTo(config.getMerchantId());
+    }
+
+    @Test
+    void verifyAndDecrypt_withGatewayNumericPayinTimeFields_shouldParseAsText() throws Exception {
+        OpenApiClientConfig config = OpenApiTestSupport.clientConfig();
+        String eventId = "evt-verifier-payin-time-001";
+        String plainJson = "{"
+                + "\"merNo\":\"" + OpenApiTestSupport.merchantId() + "\","
+                + "\"tradeNo\":\"pay_numeric_time\","
+                + "\"orderNo\":\"ORDER_NUMERIC_TIME\","
+                + "\"currency\":\"USD\","
+                + "\"amount\":12.34,"
+                + "\"paymentMethod\":\"CASHAPP\","
+                + "\"tradeDate\":1728641594235,"
+                + "\"status\":1,"
+                + "\"code\":\"success\","
+                + "\"message\":\"Paid\","
+                + "\"expireTime\":1728645148000,"
+                + "\"paymentMethodTypes\":[\"CASHAPP\"]"
+                + "}";
+
+        PayinWebhookRequest result = new WebhookV2Verifier(config).verifyAndDecrypt(
+                headers(config, eventId, WebhookV2TestSupport.signCallbackJwt(config, eventId, EVENT_TYPE,
+                        "pay_numeric_time")),
+                WebhookV2TestSupport.encryptedBodyFromPlainJson(config, plainJson),
+                EVENT_TYPE,
+                PayinWebhookRequest.class);
+
+        assertThat(result.getTradeNo()).isEqualTo("pay_numeric_time");
+        assertThat(result.getTradeDate()).isEqualTo("1728641594235");
+        assertThat(result.getExpireTime()).isEqualTo("1728645148000");
+    }
+
+    @Test
+    void verifyAndDecrypt_withGatewayNumericPayoutTimeFields_shouldParseAsText() throws Exception {
+        OpenApiClientConfig config = OpenApiTestSupport.clientConfig();
+        String eventType = "PAYOUT_CALLBACK";
+        String eventId = "evt-verifier-payout-time-001";
+        String plainJson = "{"
+                + "\"merNo\":\"" + OpenApiTestSupport.merchantId() + "\","
+                + "\"tradeNo\":\"payout_numeric_time\","
+                + "\"orderNo\":\"PAYOUT_ORDER_NUMERIC_TIME\","
+                + "\"currency\":\"USD\","
+                + "\"amount\":19.00,"
+                + "\"paymentMethod\":\"ACH_DEBIT\","
+                + "\"completionDate\":1728641594235,"
+                + "\"status\":1,"
+                + "\"code\":\"success\","
+                + "\"message\":\"Paid\","
+                + "\"metadata\":\"metadata\""
+                + "}";
+
+        PayoutWebhookRequest result = new WebhookV2Verifier(config).verifyAndDecrypt(
+                headers(config, eventId, WebhookV2TestSupport.signCallbackJwt(config, eventId, eventType,
+                        "payout_numeric_time")),
+                WebhookV2TestSupport.encryptedBodyFromPlainJson(config, plainJson),
+                eventType,
+                PayoutWebhookRequest.class);
+
+        assertThat(result.getTradeNo()).isEqualTo("payout_numeric_time");
+        assertThat(result.getCompletionDate()).isEqualTo("1728641594235");
     }
 
     @Test

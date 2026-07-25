@@ -218,6 +218,9 @@ public final class OpenApiLogSanitizer {
         if (isPhoneField(normalized) || isIdentityField(normalized)) {
             return maskMiddle(value, 2, 2, MASK);
         }
+        if (isNameField(normalized)) {
+            return MASK;
+        }
         if ("authorization".equals(normalized)) {
             return maskAuthorization(value);
         }
@@ -256,6 +259,12 @@ public final class OpenApiLogSanitizer {
 
     private static boolean isIdentityField(String normalized) {
         return normalized.contains("identity") || normalized.contains("idcard") || normalized.contains("document");
+    }
+
+    private static boolean isNameField(String normalized) {
+        return "name".equals(normalized)
+                || "firstname".equals(normalized)
+                || "lastname".equals(normalized);
     }
 
     private static String maskEmail(String value) {

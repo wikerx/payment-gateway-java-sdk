@@ -16,9 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,6 +61,18 @@ public class WebhookV2Verifier {
                                   String requestBody,
                                   String expectedEventType,
                                   Class<T> payloadType) {
+        return verifyAndDecryptWithClaims(headers, requestBody, expectedEventType, payloadType).getPayload();
+    }
+
+    /**
+     * 完成 V2 回调验签解密，并返回 JWT Claims 与业务报文。
+     *
+     * 商户如需使用 eventId 做幂等，可通过返回值读取已经验签通过的 claims。
+     */
+    public <T> WebhookV2VerificationResult<T> verifyAndDecryptWithClaims(WebhookV2Headers headers,
+                                                                         String requestBody,
+                                                                         String expectedEventType,
+                                                                         Class<T> payloadType) {
         log.info("商户回调V2-开始验签解密: {}", JsonSupport.toLogJson(logFields(
                 "livemode", headers == null ? null : headers.getLivemode(),
                 "callbackVersion", headers == null ? null : headers.getCallbackVersion(),
@@ -73,7 +83,6 @@ public class WebhookV2Verifier {
 
         WebhookV2Claims claims = verifyHeadersAndJwt(headers, expectedEventType);
         String plainJson = decryptBody(requestBody);
-        log.info("plainJson:{}", plainJson);
         T payload = parsePayload(plainJson, payloadType);
         validateTradeNo(claims, payload);
 
@@ -84,7 +93,7 @@ public class WebhookV2Verifier {
                 "eventType", claims.getEventType(),
                 "tradeNo", claims.getTradeNo(),
                 "payloadType", payloadTypeName(payloadType))));
-        return payload;
+        return new WebhookV2VerificationResult<T>(claims, payload);
     }
 
     /**
@@ -258,10 +267,6 @@ public class WebhookV2Verifier {
         if (StringUtils.isBlank(value)) {
             throw new OpenApiValidationException(fieldName + " can not be blank");
         }
-    }
-
-    public static List<String> maskedAuthorization() {
-        return Collections.singletonList("Bearer ***");
     }
 
     private static String payloadTypeName(Class<?> payloadType) {

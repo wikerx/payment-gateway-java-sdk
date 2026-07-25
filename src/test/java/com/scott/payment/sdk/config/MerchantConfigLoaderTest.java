@@ -57,8 +57,8 @@ class MerchantConfigLoaderTest {
         assertThat(config.getBaseUrl()).isEqualTo("http://localhost:58060");
         assertThat(config.getLivemode()).isFalse();
         assertThat(config.getRawHttpLogEnabled()).isTrue();
-        assertThat(config.getConnectTimeoutMs()).isEqualTo(3000);
-        assertThat(config.getReadTimeoutMs()).isEqualTo(10000);
+        assertThat(config.getConnectTimeoutMs()).isEqualTo(OpenApiConstants.HTTP_CONNECT_TIMEOUT_MS);
+        assertThat(config.getReadTimeoutMs()).isEqualTo(OpenApiConstants.HTTP_READ_TIMEOUT_MS);
     }
 
     /**

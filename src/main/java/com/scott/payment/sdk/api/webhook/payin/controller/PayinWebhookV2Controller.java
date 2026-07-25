@@ -2,6 +2,7 @@ package com.scott.payment.sdk.api.webhook.payin.controller;
 
 import com.scott.payment.sdk.api.webhook.payin.PayinWebhookHandler;
 import com.scott.payment.sdk.api.webhook.v2.WebhookV2Headers;
+import com.scott.payment.sdk.api.webhook.v2.WebhookV2VerificationResult;
 import com.scott.payment.sdk.api.webhook.v2.WebhookV2Verifier;
 import com.scott.payment.sdk.exception.OpenApiValidationException;
 import com.scott.payment.sdk.json.JsonSupport;
@@ -64,7 +65,6 @@ public class PayinWebhookV2Controller {
             @RequestBody String requestBody,
             HttpServletRequest servletRequest) {
         Map<String, List<String>> requestHeaders = RequestHeaderParams.getRequestHeaders(servletRequest);
-        requestHeaders.put("Authorization", WebhookV2Verifier.maskedAuthorization());
         log.info("代收回调V2-收到网关回调: {}", JsonSupport.toLogJson(logFields(
                 "method", servletRequest.getMethod(),
                 "uri", servletRequest.getRequestURI(),
@@ -73,8 +73,7 @@ public class PayinWebhookV2Controller {
                 "callbackEventId", callbackEventId,
                 "headers", requestHeaders,
                 "body", OpenApiLogSanitizer.bodySummary(requestBody))));
-        log.info("requestBody:{}", requestBody);
-        PayinWebhookRequest request = verifier.verifyAndDecrypt(WebhookV2Headers.builder()
+        WebhookV2VerificationResult<PayinWebhookRequest> verified = verifier.verifyAndDecryptWithClaims(WebhookV2Headers.builder()
                         .authorization(authorization)
                         .livemode(livemode)
                         .callbackVersion(callbackVersion)
@@ -83,8 +82,9 @@ public class PayinWebhookV2Controller {
                 requestBody,
                 EVENT_TYPE,
                 PayinWebhookRequest.class);
+        PayinWebhookRequest request = verified.getPayload();
 
-        handler.handle(request);
+        handler.handle(request, verified.getClaims());
         log.info("代收回调V2-处理完成: {}", JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeObject(logFields(
                 "callbackEventId", callbackEventId,
                 "tradeNo", request.getTradeNo(),
