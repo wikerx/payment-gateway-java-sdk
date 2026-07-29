@@ -36,7 +36,22 @@ public enum PaymentMethod {
     /**
      * UPI。
      */
-    UPI("UPI", "印度 UPI");
+    UPI("UPI", "印度 UPI"),
+
+    /**
+     * 比特币链上支付，支持代收和代付。
+     */
+    BTC_ON_CHAIN("BTC_ON_CHAIN", "比特币链上支付"),
+
+    /**
+     * 比特币轻网络支付，仅支持代收。
+     */
+    BTC_LIGHT_NETWORK("BTC_LIGHT_NETWORK", "比特币轻网络支付"),
+
+    /**
+     * PayPal USD 稳定币支付，支持代收和代付。
+     */
+    PYUSD("PYUSD", "PayPal USD 稳定币支付");
 
     /**
      * 网关接口要求的支付方式代码。

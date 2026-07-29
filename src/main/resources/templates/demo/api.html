@@ -127,8 +127,49 @@
                 bankName: "scott's bank",
                 bankCode: "641110",
                 cardNo: "6200000000000005"
-            }
+            },
+            BTC_ON_CHAIN: {},
+            BTC_LIGHT_NETWORK: {},
+            PYUSD: {}
         };
+
+        var payoutAddressPlaceholders = {
+            BTC_ON_CHAIN: "请输入 BTC 链上收款地址",
+            PYUSD: "请输入 PYUSD 收款地址"
+        };
+
+        function own(object, key) {
+            return Object.prototype.hasOwnProperty.call(object, key);
+        }
+
+        function setupPayoutAddress() {
+            var method = control("paymentMethod");
+            var address = control("address");
+            var addressField = field("address");
+            if (!method || !address || !addressField) {
+                return;
+            }
+
+            function sync() {
+                var addressRequired = own(payoutAddressPlaceholders, method.value);
+                address.required = addressRequired;
+                address.placeholder = addressRequired
+                    ? payoutAddressPlaceholders[method.value]
+                    : "当前支付方式可留空";
+
+                var requiredBadge = addressField.querySelector(".conditional-required");
+                if (!requiredBadge) {
+                    requiredBadge = document.createElement("em");
+                    requiredBadge.className = "conditional-required";
+                    requiredBadge.textContent = "必填";
+                    addressField.querySelector(".label-line").appendChild(requiredBadge);
+                }
+                requiredBadge.hidden = !addressRequired;
+            }
+
+            method.addEventListener("change", sync);
+            sync();
+        }
 
         function field(name) {
             return document.querySelector('[data-field-name="' + name + '"]');
@@ -181,6 +222,7 @@
 
         setupCustomerMode();
         setupPaymentMethodData();
+        setupPayoutAddress();
     })();
 </script>
 </body>

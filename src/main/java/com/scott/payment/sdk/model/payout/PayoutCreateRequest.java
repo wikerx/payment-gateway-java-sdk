@@ -77,6 +77,13 @@ public class PayoutCreateRequest {
     private String paymentMethod;
 
     /**
+     * 收款地址。
+     *
+     * 使用 BTC_ON_CHAIN 或 PYUSD 发起代付时必填，其他支付方式无需提交。
+     */
+    private String address;
+
+    /**
      * 支付方式扩展数据，可能包含敏感信息。
      */
     @ToString.Exclude

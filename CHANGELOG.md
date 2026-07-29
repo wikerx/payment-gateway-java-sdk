@@ -11,3 +11,5 @@
 - 增加 Thymeleaf 页面联调控制台，入口为 `/payment-sdk/demo/apis`，支持客户、代收、退款、代付和余额查询 API 的沙盒参数生成、页面提交调用和响应展示。
 - 完善代收 Demo 页面：支持 `customerId/customer` 二选一、收银台支付方式下拉选择，以及直连支付方式切换时自动联动 `paymentMethodData` 示例。
 - 完善代付 Demo 页面：发起代付支持币种和支付方式下拉选择，并复用支付方式参数示例联动。
+- 新增 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD` 支付方式；其中 `BTC_LIGHT_NETWORK` 仅支持代收。
+- `BTC_ON_CHAIN`、`PYUSD` 代付新增顶层必填参数 `address`，SDK 和 Demo 均增加条件校验及页面联动。

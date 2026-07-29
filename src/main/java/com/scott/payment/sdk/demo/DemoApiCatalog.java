@@ -108,9 +108,11 @@ public final class DemoApiCatalog {
                                 option("APPLE_PAY", "APPLE_PAY - Apple Pay"),
                                 option("GOOGLE_PAY", "GOOGLE_PAY - Google Pay"),
                                 option("PAY_PAL", "PAY_PAL - PayPal"),
-                                option("PAY_PAL", "PAY_PAL - PayPal"),
                                 option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
-                                option("UPI", "UPI - 印度 UPI"))),
+                                option("UPI", "UPI - 印度 UPI"),
+                                option("BTC_ON_CHAIN", "BTC_ON_CHAIN - 比特币链上支付"),
+                                option("BTC_LIGHT_NETWORK", "BTC_LIGHT_NETWORK - 比特币轻网络支付"),
+                                option("PYUSD", "PYUSD - PayPal USD 稳定币支付"))),
                         json("paymentMethodData", "支付方式参数", "不同支付方式需要不同扩展参数，包含敏感信息时不要输出到生产日志。", true,
                                 "{\n  \"cashappAccount\": \"$123\",\n  \"email\": \"lily_brown_1782457030419@test.com\"\n}", ""),
                         field("returnUrl", "返回地址", "支付完成后的前端跳转地址。", false, DemoLocalUrls.PAYIN_RETURN_URL, ""),
@@ -169,7 +171,10 @@ public final class DemoApiCatalog {
                         field("orderNo", "商户订单号", "商户侧唯一代付订单号，Demo 会自动生成。", true, "AUTO:PAYOUT_", ""),
                         currencySelect(),
                         field("amount", "金额", "代付出款金额。", true, "3.11", "3.11"),
-                        select("paymentMethod", "支付方式", "收款支付方式。", true, "CARD", "", paymentMethodOptions()),
+                        select("paymentMethod", "支付方式", "收款支付方式；BTC_ON_CHAIN、PYUSD 需要填写收款地址。", true, "CARD", "",
+                                payoutPaymentMethodOptions()),
+                        field("address", "收款地址", "BTC_ON_CHAIN、PYUSD 代付必填，其他支付方式可留空。请填写商户确认过的真实收款地址。", false, "",
+                                "选择加密货币支付方式后填写收款地址"),
                         json("paymentMethodData", "支付方式参数", "收款支付方式扩展数据，可能包含卡号或银行账号。", true,
                                 "{\n  \"number\": \"4000056655665556\",\n  \"expMonth\": \"06\",\n  \"expYear\": \"2029\",\n  \"cvc\": \"123\"\n}", ""),
                         field("notifyUrl", "异步通知地址", "网关代付结果通知地址。", false, DemoLocalUrls.PAYOUT_NOTIFY_URL, ""),
@@ -321,17 +326,32 @@ public final class DemoApiCatalog {
 
     private static DemoApiField paymentMethodTypes() {
         return select("paymentMethodTypes", "可用支付方式", "收银台代收选择一个支付方式，Demo 会提交为 paymentMethodTypes 集合。", false, "CARD", "",
-                paymentMethodOptions());
+                payinPaymentMethodOptions());
     }
 
-    private static List<DemoApiField.Option> paymentMethodOptions() {
+    private static List<DemoApiField.Option> payinPaymentMethodOptions() {
         return options(
                 option("CARD", "CARD - 信用卡"),
                 option("CASHAPP", "CASHAPP - Cash App"),
                 option("PAY_PAL", "PAY_PAL - PayPal"),
                 option("VENMO", "VENMO - venmo"),
                 option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
-                option("UPI", "UPI - 印度 UPI"));
+                option("UPI", "UPI - 印度 UPI"),
+                option("BTC_ON_CHAIN", "BTC_ON_CHAIN - 比特币链上支付"),
+                option("BTC_LIGHT_NETWORK", "BTC_LIGHT_NETWORK - 比特币轻网络支付"),
+                option("PYUSD", "PYUSD - PayPal USD 稳定币支付"));
+    }
+
+    private static List<DemoApiField.Option> payoutPaymentMethodOptions() {
+        return options(
+                option("CARD", "CARD - 信用卡"),
+                option("CASHAPP", "CASHAPP - Cash App"),
+                option("PAY_PAL", "PAY_PAL - PayPal"),
+                option("VENMO", "VENMO - venmo"),
+                option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
+                option("UPI", "UPI - 印度 UPI"),
+                option("BTC_ON_CHAIN", "BTC_ON_CHAIN - 比特币链上支付"),
+                option("PYUSD", "PYUSD - PayPal USD 稳定币支付"));
     }
 
     private static DemoApiField field(String name,

@@ -171,8 +171,8 @@ http://localhost:58080/payment-sdk/demo/apis
 
 - `customerId` 和 `customer` 通过“客户提交方式”二选一，页面会按选择隐藏另一组字段，Controller 组装请求时也只提交选中的字段；
 - 创建收银台代收通过下拉选择 `paymentMethodTypes`，提交后会组装为单元素支付方式集合；
-- 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，覆盖 `CARD`、`CASHAPP`、`PAY_PAL`、`ACH_DEBIT`、`UPI`。
-- 发起代付通过下拉选择币种和 `paymentMethod`，切换支付方式时同样会自动替换 `paymentMethodData` 示例参数。
+- 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，并支持 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD`。
+- 发起代付通过下拉选择币种和 `paymentMethod`，切换支付方式时同样会自动替换 `paymentMethodData` 示例参数；参数列表固定展示 `address` 收款地址，选择 `BTC_ON_CHAIN` 或 `PYUSD` 时会标记为必填。
 
 页面联调控制台使用真实 SDK 客户端，请求会发送到 `payment.gateway.base-url`。发起代收、退款、代付、取消代付等操作可能创建沙盒交易或触发网关资金类业务校验；商户联调时应使用沙盒商户配置和测试网关地址。
 
@@ -250,8 +250,13 @@ SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使
 | `PaymentMethod.CASHAPP` | `CASHAPP` | Cash App |
 | `PaymentMethod.ACH_DEBIT` | `ACH_DEBIT` | ACH 直接借记 |
 | `PaymentMethod.UPI` | `UPI` | 印度 UPI |
+| `PaymentMethod.BTC_ON_CHAIN` | `BTC_ON_CHAIN` | 比特币链上支付，支持代收和代付 |
+| `PaymentMethod.BTC_LIGHT_NETWORK` | `BTC_LIGHT_NETWORK` | 比特币轻网络支付，仅支持代收 |
+| `PaymentMethod.PYUSD` | `PYUSD` | PayPal USD 稳定币支付，支持代收和代付 |
 
 `PaymentCreateRequest` 和 `PayoutCreateRequest` 同时保留 `setPaymentMethod(String)`，用于兼容历史代码或网关新增但 SDK 暂未发布的新支付方式。
+
+使用 `BTC_ON_CHAIN` 或 `PYUSD` 发起代付时，还必须通过 `PayoutCreateRequest.setAddress(String)` 设置顶层 `address` 收款地址。`BTC_LIGHT_NETWORK` 不支持代付。
 
 ## 收银台支付
 
@@ -321,6 +326,15 @@ request.setPaymentMethodData(paymentMethodData);
 
 OpenApiResult<PayoutResponse> result = client.createPayout(request);
 ```
+
+加密货币代付应额外设置收款地址，例如：
+
+```java
+request.setPaymentMethod(PaymentMethod.BTC_ON_CHAIN);
+request.setAddress("商户确认过的 BTC 链上收款地址");
+```
+
+`PYUSD` 代付同样要求 `address`。SDK 会在发送 HTTP 请求前校验这两个支付方式的收款地址，其他支付方式不受该字段影响。
 
 代付申请是资金类请求。商户生产接入时必须在本地先生成唯一 `orderNo`，并基于 `orderNo` 做幂等落库；网关返回 `tradeNo` 后保存平台流水，最终状态以查询接口或代付异步通知为准。
 

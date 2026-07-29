@@ -424,6 +424,9 @@ request.setPaymentMethodData(paymentMethodData);
 OpenApiResult<PayoutResponse> result = client.createPayout(request);
 ```
 
+当 `paymentMethod` 为 `BTC_ON_CHAIN` 或 `PYUSD` 时，代付请求还必须通过
+`request.setAddress("商户确认过的收款地址")` 设置顶层 `address` 字段；`BTC_LIGHT_NETWORK` 仅支持代收，不能用于代付。
+
 ### 8.3 查询余额
 
 ```java

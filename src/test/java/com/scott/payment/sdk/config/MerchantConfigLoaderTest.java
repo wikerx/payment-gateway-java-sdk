@@ -54,7 +54,7 @@ class MerchantConfigLoaderTest {
         assertThat(config.getMerchantJwtSecret()).hasSizeGreaterThanOrEqualTo(32);
         assertThat(config.getPlatformPublicKey()).isNotBlank();
         assertThat(config.getMerchantResponsePrivateKey()).isNotBlank();
-        assertThat(config.getBaseUrl()).isEqualTo("http://localhost:58060");
+        assertThat(config.getBaseUrl()).isEqualTo("http://192.168.2.114:58060");
         assertThat(config.getLivemode()).isFalse();
         assertThat(config.getRawHttpLogEnabled()).isTrue();
         assertThat(config.getConnectTimeoutMs()).isEqualTo(OpenApiConstants.HTTP_CONNECT_TIMEOUT_MS);

@@ -31,6 +31,9 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.CASHAPP.getCode()).isEqualTo("CASHAPP");
         assertThat(PaymentMethod.ACH_DEBIT.getCode()).isEqualTo("ACH_DEBIT");
         assertThat(PaymentMethod.UPI.getCode()).isEqualTo("UPI");
+        assertThat(PaymentMethod.BTC_ON_CHAIN.getCode()).isEqualTo("BTC_ON_CHAIN");
+        assertThat(PaymentMethod.BTC_LIGHT_NETWORK.getCode()).isEqualTo("BTC_LIGHT_NETWORK");
+        assertThat(PaymentMethod.PYUSD.getCode()).isEqualTo("PYUSD");
     }
 
     /**
@@ -43,6 +46,9 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.fromCode("cashapp")).isEqualTo(PaymentMethod.CASHAPP);
         assertThat(PaymentMethod.fromCode("ACH_DEBIT")).isEqualTo(PaymentMethod.ACH_DEBIT);
         assertThat(PaymentMethod.fromCode("upi")).isEqualTo(PaymentMethod.UPI);
+        assertThat(PaymentMethod.fromCode("btc_on_chain")).isEqualTo(PaymentMethod.BTC_ON_CHAIN);
+        assertThat(PaymentMethod.fromCode(" BTC_LIGHT_NETWORK ")).isEqualTo(PaymentMethod.BTC_LIGHT_NETWORK);
+        assertThat(PaymentMethod.fromCode("pyusd")).isEqualTo(PaymentMethod.PYUSD);
     }
 
     /**
@@ -91,10 +97,13 @@ class PaymentMethodTest {
     @Test
     void payoutCreateRequest_shouldSerializePaymentMethodCode() {
         PayoutCreateRequest request = new PayoutCreateRequest();
-        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+        request.setPaymentMethod(PaymentMethod.PYUSD);
+        request.setAddress("0x1111111111111111111111111111111111111111");
 
-        assertThat(request.getPaymentMethod()).isEqualTo("PAY_PAL");
-        assertThat(JsonSupport.toJson(request)).contains("\"paymentMethod\":\"PAY_PAL\"");
+        assertThat(request.getPaymentMethod()).isEqualTo("PYUSD");
+        assertThat(JsonSupport.toJson(request))
+                .contains("\"paymentMethod\":\"PYUSD\"")
+                .contains("\"address\":\"0x1111111111111111111111111111111111111111\"");
     }
 
     /**

@@ -8,6 +8,7 @@ import com.scott.payment.sdk.config.MerchantConfigLoader;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.CustomerInfo;
+import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.common.PaymentType;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
@@ -175,7 +176,12 @@ public class DemoApiService {
         request.setOrderNo(required(params, "orderNo"));
         request.setCurrency(required(params, "currency"));
         request.setAmount(money(params, "amount"));
-        request.setPaymentMethod(required(params, "paymentMethod"));
+        String paymentMethod = required(params, "paymentMethod");
+        request.setPaymentMethod(paymentMethod);
+        if (PaymentMethod.BTC_ON_CHAIN.getCode().equalsIgnoreCase(paymentMethod)
+                || PaymentMethod.PYUSD.getCode().equalsIgnoreCase(paymentMethod)) {
+            request.setAddress(required(params, "address"));
+        }
         request.setPaymentMethodData(jsonMap(params, "paymentMethodData"));
         request.setNotifyUrl(text(params, "notifyUrl"));
         request.setClientIp(text(params, "clientIp"));

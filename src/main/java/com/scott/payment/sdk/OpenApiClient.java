@@ -244,7 +244,8 @@ public class OpenApiClient {
     /**
      * 创建代付交易。
      *
-     * 该方法会校验订单号、币种、金额、支付方式和支付方式数据，并按最新 OpenAPI 协议提交加密请求。
+     * 该方法会校验订单号、币种、金额、支付方式和支付方式数据；BTC_ON_CHAIN、PYUSD 代付还会校验收款地址，
+     * 仅支持代收的 BTC_LIGHT_NETWORK 会被拒绝，随后按最新 OpenAPI 协议提交加密请求。
      * 使用默认 HTTP 传输层时会真实向网关发起代付申请，可能创建测试代付交易并影响测试余额；使用模拟传输层时只返回模拟网关响应。
      * 本方法不保证商户侧幂等，不落库，不做终态保护，不确认渠道最终出款状态；最终结果应结合查询接口或异步通知处理。
      *
@@ -1110,6 +1111,37 @@ public class OpenApiClient {
         requireObject(request.getAmount(), "amount");
         requireText(request.getPaymentMethod(), "paymentMethod");
         requireObject(request.getPaymentMethodData(), "paymentMethodData");
+        if (isPaymentMethod(request.getPaymentMethod(), PaymentMethod.BTC_LIGHT_NETWORK)) {
+            throw new OpenApiValidationException("paymentMethod BTC_LIGHT_NETWORK only supports payin");
+        }
+        if (requiresPayoutAddress(request.getPaymentMethod())) {
+            requireText(request.getAddress(), "address");
+        }
+    }
+
+    /**
+     * 判断当前代付支付方式是否要求提供独立的收款地址。
+     *
+     * 该判断兼容商户通过枚举或原始字符串设置 paymentMethod，比较时忽略大小写和首尾空格。
+     *
+     * @param paymentMethod 网关 paymentMethod 字段代码
+     * @return BTC_ON_CHAIN 或 PYUSD 返回 true，其他支付方式返回 false
+     */
+    private boolean requiresPayoutAddress(String paymentMethod) {
+        return isPaymentMethod(paymentMethod, PaymentMethod.BTC_ON_CHAIN)
+                || isPaymentMethod(paymentMethod, PaymentMethod.PYUSD);
+    }
+
+    /**
+     * 判断 paymentMethod 字符串是否匹配指定支付方式枚举。
+     *
+     * @param paymentMethod 网关 paymentMethod 字段代码
+     * @param expected 期望匹配的支付方式
+     * @return 忽略大小写和首尾空格后相同返回 true
+     */
+    private boolean isPaymentMethod(String paymentMethod, PaymentMethod expected) {
+        String normalizedMethod = paymentMethod == null ? "" : paymentMethod.trim();
+        return expected.getCode().equalsIgnoreCase(normalizedMethod);
     }
 
     /**
