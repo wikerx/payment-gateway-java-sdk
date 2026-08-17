@@ -43,7 +43,8 @@
                         <em th:if="${field.required}">必填</em>
                     </span>
                     <select th:if="${field.select}"
-                            th:name="${'params[' + field.name + ']'}">
+                            th:name="${'params[' + field.name + ']'}"
+                            th:required="${field.required}">
                         <option th:each="option : ${field.options}"
                                 th:value="${option.value}"
                                 th:text="${option.label}"
@@ -53,10 +54,12 @@
                            th:name="${'params[' + field.name + ']'}"
                            th:value="${form.params[field.name]}"
                            th:placeholder="${field.placeholder}"
+                           th:required="${field.required}"
                            th:readonly="${field.name == 'merchantNo'}"/>
                     <textarea th:if="${field.textarea}"
                               th:name="${'params[' + field.name + ']'}"
                               th:text="${form.params[field.name]}"
+                              th:required="${field.required}"
                               th:placeholder="${field.placeholder}"></textarea>
                     <small th:text="${field.description}">field description</small>
                 </div>
@@ -191,6 +194,8 @@
             }
             var customerIdField = field("customerId");
             var customerField = field("customer");
+            var customerIdControl = control("customerId");
+            var customerControl = control("customer");
 
             function sync() {
                 var useCustomerId = mode.value === "customerId";
@@ -199,6 +204,12 @@
                 }
                 if (customerField) {
                     customerField.classList.toggle("is-hidden", useCustomerId);
+                }
+                if (customerIdControl) {
+                    customerIdControl.required = useCustomerId;
+                }
+                if (customerControl) {
+                    customerControl.required = !useCustomerId;
                 }
             }
 

@@ -10,6 +10,7 @@ import com.scott.payment.sdk.model.balance.BalanceResponse;
 import com.scott.payment.sdk.model.common.CustomerInfo;
 import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.common.PaymentType;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.customer.CustomerUpdateRequest;
@@ -121,6 +122,7 @@ public class DemoApiService {
         request.setOrderNo(required(params, "orderNo"));
         request.setCurrency(required(params, "currency"));
         request.setAmount(money(params, "amount"));
+        request.setProduct(jsonList(params, "product", ProductInfo.class));
         request.setReturnUrl(text(params, "returnUrl"));
         request.setNotifyUrl(text(params, "notifyUrl"));
         request.setClientIp(text(params, "clientIp"));
@@ -137,6 +139,7 @@ public class DemoApiService {
         request.setPayType(PaymentType.fromCode(integer(params, "payType")));
         request.setCurrency(required(params, "currency"));
         request.setAmount(money(params, "amount"));
+        request.setProduct(jsonList(params, "product", ProductInfo.class));
         request.setPaymentMethod(required(params, "paymentMethod"));
         request.setPaymentMethodData(jsonMap(params, "paymentMethodData"));
         request.setReturnUrl(text(params, "returnUrl"));
@@ -258,6 +261,19 @@ public class DemoApiService {
         String value = required(params, name);
         return JsonSupport.fromJson(value, new TypeReference<Map<String, Object>>() {
         });
+    }
+
+    /**
+     * 将页面中的必填 JSON 数组解析为指定 SDK 模型列表。
+     *
+     * @param params 页面参数
+     * @param name 参数名
+     * @param elementType 列表元素类型
+     * @param <T> 列表元素类型
+     * @return 解析后的模型列表
+     */
+    private <T> List<T> jsonList(Map<String, String> params, String name, Class<T> elementType) {
+        return JsonSupport.fromJsonList(required(params, name), elementType);
     }
 
     private Set<String> csvSet(Map<String, String> params, String name) {

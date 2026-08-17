@@ -172,6 +172,7 @@ http://localhost:58080/payment-sdk/demo/apis
 - `customerId` 和 `customer` 通过“客户提交方式”二选一，页面会按选择隐藏另一组字段，Controller 组装请求时也只提交选中的字段；
 - 创建收银台代收通过下拉选择 `paymentMethodTypes`，提交后会组装为单元素支付方式集合；
 - 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，并支持 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD`、`GOOGLE_OR_APPLE`。
+- 创建收银台和直连代收均展示必填 `product` 商品 JSON 数组，默认值可直接修改；每个商品必须包含 `name`、`description`、`sku`、`quantity`、`price`、`url`；
 - 发起代付通过下拉选择币种和 `paymentMethod`，切换支付方式时同样会自动替换 `paymentMethodData` 示例参数；参数列表固定展示 `address` 收款地址，选择 `BTC_ON_CHAIN` 或 `PYUSD` 时会标记为必填。
 
 页面联调控制台使用真实 SDK 客户端，请求会发送到 `payment.gateway.base-url`。发起代收、退款、代付、取消代付等操作可能创建沙盒交易或触发网关资金类业务校验；商户联调时应使用沙盒商户配置和测试网关地址。
@@ -262,7 +263,10 @@ SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使
 ## 收银台支付
 
 ```java
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.util.OrderNoGenerator;
+
+import java.util.Collections;
 
 OpenApiClient client = OpenApiClient.create();
 CheckoutPaymentRequest request = new CheckoutPaymentRequest();
@@ -272,10 +276,19 @@ request.setAmount(new BigDecimal("14.99"));
 request.setReturnUrl("http://192.168.2.114:58080/payment-sdk/demo/return");
 request.setNotifyUrl("http://localhost:58080/payment-sdk/api/webhook/payin");
 
+ProductInfo product = new ProductInfo();
+product.setName("Demo Product");
+product.setDescription("Merchant checkout product");
+product.setSku("SKU_10001");
+product.setQuantity(1);
+product.setPrice("14.99");
+product.setUrl("https://merchant.example.com/products/SKU_10001");
+request.setProduct(Collections.singletonList(product));
+
 OpenApiResult<PaymentResponse> result = client.createCheckoutPayment(request);
 ```
 
-金额请使用 `new BigDecimal("14.99")`，不要使用 `new BigDecimal(14.99)`。
+金额请使用 `new BigDecimal("14.99")`，不要使用 `new BigDecimal(14.99)`。收银台和本地支付直连代收的 `product` 均为必填且不能为空数组；`quantity` 会按对外协议序列化为字符串，`price` 应直接填写十进制字符串。
 
 ## 信用卡直连
 

@@ -1,5 +1,7 @@
 package com.scott.payment.sdk.demo;
 
+import com.scott.payment.sdk.json.JsonSupport;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -38,6 +40,26 @@ class DemoApiCatalogTest {
 
         DemoApiField address = field("payout-create", "address");
         assertThat(address.getDescription()).contains("BTC_ON_CHAIN", "PYUSD");
+    }
+
+    /**
+     * 验证两个代收创建页面都展示必填商品列表，并提供符合对外文档结构的可编辑默认值。
+     */
+    @Test
+    void payinCreatePages_shouldExposeRequiredProductJson() {
+        assertProductField("payin-checkout");
+        assertProductField("payin-direct");
+    }
+
+    private void assertProductField(String apiCode) {
+        DemoApiField productField = field(apiCode, "product");
+        assertThat(productField.isRequired()).isTrue();
+        assertThat(productField.isTextarea()).isTrue();
+
+        List<ProductInfo> products = JsonSupport.fromJsonList(productField.getDefaultValue(), ProductInfo.class);
+        assertThat(products).hasSize(1);
+        assertThat(JsonSupport.toJson(products.get(0)))
+                .contains("\"name\"", "\"description\"", "\"sku\"", "\"quantity\"", "\"price\"", "\"url\"");
     }
 
     private DemoApiField field(String apiCode, String fieldName) {

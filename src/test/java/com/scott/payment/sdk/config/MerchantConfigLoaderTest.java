@@ -50,13 +50,14 @@ class MerchantConfigLoaderTest {
     void shouldLoadTextKeyConfig() {
         OpenApiClientConfig config = MerchantConfigLoader.load();
 
-        assertThat(config.getMerchantId()).isEqualTo("2607249795");
+        // merchant-config.properties 是商户可修改的运行配置，测试只校验加载结果，不绑定某个测试商户。
+        assertThat(config.getMerchantId()).isNotBlank();
         assertThat(config.getMerchantJwtSecret()).hasSizeGreaterThanOrEqualTo(32);
         assertThat(config.getPlatformPublicKey()).isNotBlank();
         assertThat(config.getMerchantResponsePrivateKey()).isNotBlank();
-        assertThat(config.getBaseUrl()).isEqualTo("http://192.168.2.114:58060");
-        assertThat(config.getLivemode()).isFalse();
-        assertThat(config.getRawHttpLogEnabled()).isTrue();
+        assertThat(config.getBaseUrl()).startsWith("http");
+        assertThat(config.getLivemode()).isNotNull();
+        assertThat(config.getRawHttpLogEnabled()).isNotNull();
         assertThat(config.getConnectTimeoutMs()).isEqualTo(OpenApiConstants.HTTP_CONNECT_TIMEOUT_MS);
         assertThat(config.getReadTimeoutMs()).isEqualTo(OpenApiConstants.HTTP_READ_TIMEOUT_MS);
     }

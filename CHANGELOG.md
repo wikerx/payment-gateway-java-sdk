@@ -14,3 +14,4 @@
 - 新增 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD` 支付方式；其中 `BTC_LIGHT_NETWORK` 仅支持代收。
 - `BTC_ON_CHAIN`、`PYUSD` 代付新增顶层必填参数 `address`，SDK 和 Demo 均增加条件校验及页面联动。
 - 新增仅支持代收的 `GOOGLE_OR_APPLE` 支付方式，并同步收银台、直连代收 Demo 和代付侧本地限制。
+- 收银台和本地支付直连代收新增必填 `product` 商品列表校验，并同步商品模型、Demo 页面、真实调用示例和接入文档。

@@ -76,7 +76,7 @@ public class PaymentCreateRequest {
      */
     private String productId;
     /**
-     * 商品或服务列表。
+     * 商品或服务列表。创建收银台代收和本地支付直连代收时必填，且至少包含一个完整商品对象。
      */
     private List<ProductInfo> product;
     /**

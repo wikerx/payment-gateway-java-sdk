@@ -78,6 +78,7 @@ public final class DemoApiCatalog {
                         field("orderNo", "商户订单号", "商户侧唯一订单号，Demo 会自动生成。", true, "AUTO:PAYIN_CHECKOUT_", ""),
                         currencySelect(),
                         field("amount", "金额", "主币种金额，避免使用浮点数。", true, "12.34", "12.34"),
+                        productJson(),
                         field("returnUrl", "返回地址", "支付完成后的前端跳转地址。", false, DemoLocalUrls.PAYIN_RETURN_URL, ""),
                         field("notifyUrl", "异步通知地址", "网关支付结果通知地址。", false, DemoLocalUrls.PAYIN_NOTIFY_URL, ""),
                         field("clientIp", "客户端 IP", "付款人客户端 IP。", false, "47.125.221.223", ""),
@@ -101,6 +102,7 @@ public final class DemoApiCatalog {
                                 option("1", "1 - 直连"))),
                         currencySelect(),
                         field("amount", "金额", "主币种金额，避免使用浮点数。", true, "12.34", "12.34"),
+                        productJson(),
                         select("paymentMethod", "支付方式", "支持 CARD、CASHAPP 等网关支付方式。", true, "CASHAPP", "", options(
                                 option("CASHAPP", "CASHAPP - Cash App"),
                                 option("CARD", "CARD - 信用卡"),
@@ -313,6 +315,14 @@ public final class DemoApiCatalog {
     private static DemoApiField customerJson() {
         return json("customer", "客户资料", "网关要求提供 customerId 或 customer，Demo 默认提交客户资料。", true,
                 "{\n  \"firstname\": \"Lily\",\n  \"lastname\": \"Brown\",\n  \"email\": \"lily_brown_1782457030419@test.com\",\n  \"phone\": \"13628173752\",\n  \"country\": \"US\",\n  \"state\": \"CA\",\n  \"city\": \"Los Angeles\",\n  \"address\": \"123 Main St, Apt 4B\",\n  \"zipcode\": \"90001\"\n}", "");
+    }
+
+    private static DemoApiField productJson() {
+        return json("product", "商品列表",
+                "必填 JSON 数组；每个商品必须包含 name、description、sku、quantity、price、url。",
+                true,
+                "[\n  {\n    \"name\": \"SDK Demo Product\",\n    \"description\": \"Payment Gateway Java SDK test product\",\n    \"sku\": \"SKU_10001\",\n    \"quantity\": \"1\",\n    \"price\": \"12.34\",\n    \"url\": \"https://manage.forgottenthrone.com/products/SKU_10001\"\n  }\n]",
+                "请输入商品 JSON 数组");
     }
 
     private static DemoApiField customerId() {

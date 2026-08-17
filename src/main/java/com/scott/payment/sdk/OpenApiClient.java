@@ -21,6 +21,7 @@ import com.scott.payment.sdk.model.common.OpenApiEncryptedRequest;
 import com.scott.payment.sdk.model.common.OpenApiEncryptedResponse;
 import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import com.scott.payment.sdk.model.common.PaymentMethod;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.customer.CustomerUpdateRequest;
@@ -185,7 +186,7 @@ public class OpenApiClient {
     /**
      * 创建收银台代收交易。
      *
-     * 该方法会校验订单号、币种和金额，随后按最新 OpenAPI 协议生成 JWT、加密请求 data 并通过当前 HTTP 传输层发送。
+     * 该方法会校验订单号、币种、金额和必填商品列表，随后按最新 OpenAPI 协议生成 JWT、加密请求 data 并通过当前 HTTP 传输层发送。
      * 使用默认传输层时会真实创建网关支付交易；使用测试传输层时只验证 SDK 请求封装并返回模拟响应。
      * 本方法不处理商户侧幂等落库、资金入账、订单状态流转或渠道回调。
      *
@@ -193,19 +194,21 @@ public class OpenApiClient {
      * @return 代收交易响应
      */
     public OpenApiResult<PaymentResponse> createCheckoutPayment(CheckoutPaymentRequest request) {
+        validateRequiredProducts(request);
         return createPayment(request);
     }
 
     /**
      * 创建本地支付直连交易。
      *
-     * 该方法复用代收创建链路完成参数校验、JWT 签名、请求加密、HTTP 调用和响应解密。
+     * 该方法会校验必填商品列表，再复用代收创建链路完成基础参数校验、JWT 签名、请求加密、HTTP 调用和响应解密。
      * 是否真实访问网关取决于客户端构造时注入的 HTTP 传输层；本方法不负责商户侧幂等、资金状态确认或渠道回调处理。
      *
      * @param request 本地支付请求
      * @return 代收交易响应
      */
     public OpenApiResult<PaymentResponse> createLocalPayment(LocalPaymentRequest request) {
+        validateRequiredProducts(request);
         return createPayment(request);
     }
 
@@ -1095,6 +1098,35 @@ public class OpenApiClient {
         requireText(request.getOrderNo(), "orderNo");
         requireText(request.getCurrency(), "currency");
         requireObject(request.getAmount(), "amount");
+    }
+
+    /**
+     * 校验收银台和本地支付直连代收的商品列表。
+     *
+     * 商品参数属于最新对外 OpenAPI 的必填风控和订单信息。SDK 在加密、签名和 HTTP 发送之前完成结构校验，
+     * 避免商户提交缺少商品信息的请求；商品价格只校验非空，金额格式和订单总额关系仍由网关业务规则校验。
+     *
+     * @param request 收银台或本地支付直连代收请求
+     */
+    private void validateRequiredProducts(PaymentCreateRequest request) {
+        requireObject(request, "payment request");
+        List<ProductInfo> products = request.getProduct();
+        if (products == null || products.isEmpty()) {
+            throw new OpenApiValidationException("product can not be empty");
+        }
+        for (int index = 0; index < products.size(); index++) {
+            ProductInfo product = products.get(index);
+            if (product == null) {
+                throw new OpenApiValidationException("product[" + index + "] can not be null");
+            }
+            String prefix = "product[" + index + "].";
+            requireText(product.getName(), prefix + "name");
+            requireText(product.getDescription(), prefix + "description");
+            requireText(product.getSku(), prefix + "sku");
+            requireObject(product.getQuantity(), prefix + "quantity");
+            requireText(product.getPrice(), prefix + "price");
+            requireText(product.getUrl(), prefix + "url");
+        }
     }
 
     /**

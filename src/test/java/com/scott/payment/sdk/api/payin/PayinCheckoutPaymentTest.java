@@ -8,6 +8,7 @@ import com.scott.payment.sdk.demo.DemoLocalUrls;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.payment.CheckoutPaymentRequest;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.testkit.RealGatewayTestSupport;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,6 +82,7 @@ public class PayinCheckoutPaymentTest {
         request.setOrderNo(OrderNoGenerator.generate("PAYIN_CHECKOUT_"));
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
+        request.setProduct(Collections.singletonList(productInfo()));
         request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
         request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
         request.setCustomer(customerInfo());
@@ -87,6 +90,22 @@ public class PayinCheckoutPaymentTest {
         request.setWebsite("https://manage.forgottenthrone.com/");
         request.setMetadata("metadata");
         return request;
+    }
+
+    /**
+     * 构建符合对外 OpenAPI 必填规则的商品信息。
+     *
+     * @return 收银台代收测试商品
+     */
+    private ProductInfo productInfo() {
+        ProductInfo product = new ProductInfo();
+        product.setName("SDK Demo Product");
+        product.setDescription("Payment Gateway Java SDK checkout test product");
+        product.setSku("SKU_CHECKOUT_10001");
+        product.setQuantity(1);
+        product.setPrice("12.34");
+        product.setUrl("https://manage.forgottenthrone.com/products/SKU_CHECKOUT_10001");
+        return product;
     }
 
     /**

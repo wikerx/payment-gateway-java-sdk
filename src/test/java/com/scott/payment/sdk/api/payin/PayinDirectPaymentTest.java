@@ -10,6 +10,7 @@ import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
 import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.common.PaymentType;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.payment.LocalPaymentRequest;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.testkit.RealGatewayTestSupport;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,6 +87,7 @@ public class PayinDirectPaymentTest {
         request.setPayType(PaymentType.Direct);
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
+        request.setProduct(Collections.singletonList(productInfo()));
         request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
 //        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
 //        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/webhook/payin");
@@ -102,6 +105,22 @@ public class PayinDirectPaymentTest {
 //        request.setPaymentMethod(PaymentMethod.CARD);
 //        request.setPaymentMethodData(paymentMethodData(PaymentMethod.CARD));
         return request;
+    }
+
+    /**
+     * 构建符合对外 OpenAPI 必填规则的商品信息。
+     *
+     * @return 本地支付直连代收测试商品
+     */
+    private ProductInfo productInfo() {
+        ProductInfo product = new ProductInfo();
+        product.setName("SDK Demo Product");
+        product.setDescription("Payment Gateway Java SDK direct payin test product");
+        product.setSku("SKU_DIRECT_10001");
+        product.setQuantity(1);
+        product.setPrice("12.34");
+        product.setUrl("https://manage.forgottenthrone.com/products/SKU_DIRECT_10001");
+        return product;
     }
 
     /**

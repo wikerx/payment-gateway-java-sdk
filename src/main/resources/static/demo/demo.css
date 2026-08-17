@@ -259,6 +259,10 @@ textarea {
     font: inherit;
 }
 
+.field[data-field-name="product"] textarea {
+    min-height: 230px;
+}
+
 input {
     height: 42px;
     padding: 0 12px;
