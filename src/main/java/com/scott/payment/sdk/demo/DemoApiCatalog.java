@@ -107,6 +107,7 @@ public final class DemoApiCatalog {
                                 option("CHECKOUT", "CHECKOUT - 信用卡收银台"),
                                 option("APPLE_PAY", "APPLE_PAY - Apple Pay"),
                                 option("GOOGLE_PAY", "GOOGLE_PAY - Google Pay"),
+                                option("GOOGLE_OR_APPLE", "GOOGLE_OR_APPLE - Google Pay 或 Apple Pay"),
                                 option("PAY_PAL", "PAY_PAL - PayPal"),
                                 option("ACH_DEBIT", "ACH_DEBIT - ACH 直接借记"),
                                 option("UPI", "UPI - 印度 UPI"),
@@ -339,7 +340,8 @@ public final class DemoApiCatalog {
                 option("UPI", "UPI - 印度 UPI"),
                 option("BTC_ON_CHAIN", "BTC_ON_CHAIN - 比特币链上支付"),
                 option("BTC_LIGHT_NETWORK", "BTC_LIGHT_NETWORK - 比特币轻网络支付"),
-                option("PYUSD", "PYUSD - PayPal USD 稳定币支付"));
+                option("PYUSD", "PYUSD - PayPal USD 稳定币支付"),
+                option("GOOGLE_OR_APPLE", "GOOGLE_OR_APPLE - Google Pay 或 Apple Pay"));
     }
 
     private static List<DemoApiField.Option> payoutPaymentMethodOptions() {

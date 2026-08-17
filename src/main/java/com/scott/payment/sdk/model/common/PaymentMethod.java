@@ -51,7 +51,12 @@ public enum PaymentMethod {
     /**
      * PayPal USD 稳定币支付，支持代收和代付。
      */
-    PYUSD("PYUSD", "PayPal USD 稳定币支付");
+    PYUSD("PYUSD", "PayPal USD 稳定币支付"),
+
+    /**
+     * Google Pay 或 Apple Pay 聚合支付，仅支持代收。
+     */
+    GOOGLE_OR_APPLE("GOOGLE_OR_APPLE", "Google Pay 或 Apple Pay 聚合支付");
 
     /**
      * 网关接口要求的支付方式代码。

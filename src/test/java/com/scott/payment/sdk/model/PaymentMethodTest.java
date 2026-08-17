@@ -34,6 +34,7 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.BTC_ON_CHAIN.getCode()).isEqualTo("BTC_ON_CHAIN");
         assertThat(PaymentMethod.BTC_LIGHT_NETWORK.getCode()).isEqualTo("BTC_LIGHT_NETWORK");
         assertThat(PaymentMethod.PYUSD.getCode()).isEqualTo("PYUSD");
+        assertThat(PaymentMethod.GOOGLE_OR_APPLE.getCode()).isEqualTo("GOOGLE_OR_APPLE");
     }
 
     /**
@@ -49,6 +50,7 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.fromCode("btc_on_chain")).isEqualTo(PaymentMethod.BTC_ON_CHAIN);
         assertThat(PaymentMethod.fromCode(" BTC_LIGHT_NETWORK ")).isEqualTo(PaymentMethod.BTC_LIGHT_NETWORK);
         assertThat(PaymentMethod.fromCode("pyusd")).isEqualTo(PaymentMethod.PYUSD);
+        assertThat(PaymentMethod.fromCode("google_or_apple")).isEqualTo(PaymentMethod.GOOGLE_OR_APPLE);
     }
 
     /**

@@ -171,7 +171,7 @@ http://localhost:58080/payment-sdk/demo/apis
 
 - `customerId` 和 `customer` 通过“客户提交方式”二选一，页面会按选择隐藏另一组字段，Controller 组装请求时也只提交选中的字段；
 - 创建收银台代收通过下拉选择 `paymentMethodTypes`，提交后会组装为单元素支付方式集合；
-- 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，并支持 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD`。
+- 创建直连代收切换 `paymentMethod` 时，会自动替换 `paymentMethodData` 示例参数，并支持 `BTC_ON_CHAIN`、`BTC_LIGHT_NETWORK`、`PYUSD`、`GOOGLE_OR_APPLE`。
 - 发起代付通过下拉选择币种和 `paymentMethod`，切换支付方式时同样会自动替换 `paymentMethodData` 示例参数；参数列表固定展示 `address` 收款地址，选择 `BTC_ON_CHAIN` 或 `PYUSD` 时会标记为必填。
 
 页面联调控制台使用真实 SDK 客户端，请求会发送到 `payment.gateway.base-url`。发起代收、退款、代付、取消代付等操作可能创建沙盒交易或触发网关资金类业务校验；商户联调时应使用沙盒商户配置和测试网关地址。
@@ -253,10 +253,11 @@ SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使
 | `PaymentMethod.BTC_ON_CHAIN` | `BTC_ON_CHAIN` | 比特币链上支付，支持代收和代付 |
 | `PaymentMethod.BTC_LIGHT_NETWORK` | `BTC_LIGHT_NETWORK` | 比特币轻网络支付，仅支持代收 |
 | `PaymentMethod.PYUSD` | `PYUSD` | PayPal USD 稳定币支付，支持代收和代付 |
+| `PaymentMethod.GOOGLE_OR_APPLE` | `GOOGLE_OR_APPLE` | Google Pay 或 Apple Pay 聚合支付，仅支持代收 |
 
 `PaymentCreateRequest` 和 `PayoutCreateRequest` 同时保留 `setPaymentMethod(String)`，用于兼容历史代码或网关新增但 SDK 暂未发布的新支付方式。
 
-使用 `BTC_ON_CHAIN` 或 `PYUSD` 发起代付时，还必须通过 `PayoutCreateRequest.setAddress(String)` 设置顶层 `address` 收款地址。`BTC_LIGHT_NETWORK` 不支持代付。
+使用 `BTC_ON_CHAIN` 或 `PYUSD` 发起代付时，还必须通过 `PayoutCreateRequest.setAddress(String)` 设置顶层 `address` 收款地址。`BTC_LIGHT_NETWORK`、`GOOGLE_OR_APPLE` 不支持代付。
 
 ## 收银台支付
 
