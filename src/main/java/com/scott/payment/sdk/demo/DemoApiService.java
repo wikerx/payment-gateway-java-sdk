@@ -117,7 +117,13 @@ public class DemoApiService {
         }
     }
 
-    private CheckoutPaymentRequest checkoutPaymentRequest(Map<String, String> params) {
+    /**
+     * 将收银台页面参数组装为 SDK 请求模型。
+     *
+     * @param params 页面参数
+     * @return 收银台代收请求
+     */
+    CheckoutPaymentRequest checkoutPaymentRequest(Map<String, String> params) {
         CheckoutPaymentRequest request = new CheckoutPaymentRequest();
         request.setOrderNo(required(params, "orderNo"));
         request.setCurrency(required(params, "currency"));
@@ -133,7 +139,13 @@ public class DemoApiService {
         return request;
     }
 
-    private LocalPaymentRequest localPaymentRequest(Map<String, String> params) {
+    /**
+     * 将本地支付直连页面参数组装为 SDK 请求模型。
+     *
+     * @param params 页面参数
+     * @return 本地支付直连代收请求
+     */
+    LocalPaymentRequest localPaymentRequest(Map<String, String> params) {
         LocalPaymentRequest request = new LocalPaymentRequest();
         request.setOrderNo(required(params, "orderNo"));
         request.setPayType(PaymentType.fromCode(integer(params, "payType")));

@@ -7,6 +7,7 @@ import com.scott.payment.sdk.config.MerchantConfigLoader;
 import com.scott.payment.sdk.json.JsonSupport;
 import com.scott.payment.sdk.logging.OpenApiLogSanitizer;
 import com.scott.payment.sdk.model.common.CustomerInfo;
+import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.payment.CheckoutPaymentRequest;
 import com.scott.payment.sdk.model.payment.PaymentResponse;
 import com.scott.payment.sdk.model.refund.RefundCreateRequest;
@@ -18,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -112,6 +114,7 @@ public class PayinRefundCreateTest {
         request.setOrderNo(OrderNoGenerator.generate("PAYIN_REFUND_"));
         request.setCurrency("USD");
         request.setAmount(new BigDecimal("12.34"));
+        request.setProduct(Collections.singletonList(productInfo()));
         request.setReturnUrl("https://manage.forgottenthrone.com/");
         request.setNotifyUrl("http://192.168.2.114:58080/payment-sdk/api/webhook/payin");
         request.setCustomer(customerInfo());
@@ -134,6 +137,22 @@ public class PayinRefundCreateTest {
         assertThat(createResult.getData()).isNotNull();
         assertThat(createResult.getData().getTradeNo()).isNotBlank();
         return createResult.getData().getTradeNo();
+    }
+
+    /**
+     * 构建前置收银台代收所需的必填商品信息。
+     *
+     * @return 退款前置代收测试商品
+     */
+    private ProductInfo productInfo() {
+        ProductInfo product = new ProductInfo();
+        product.setName("SDK Refund Test Product");
+        product.setDescription("Payment Gateway Java SDK refund prerequisite product");
+        product.setSku("SKU_REFUND_10001");
+        product.setQuantity(1);
+        product.setPrice("12.34");
+        product.setUrl("https://manage.forgottenthrone.com/products/SKU_REFUND_10001");
+        return product;
     }
 
     /**
