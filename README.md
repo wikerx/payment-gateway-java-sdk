@@ -251,6 +251,8 @@ SDK 提供 `PaymentMethod` 枚举，商户在设置 `paymentMethod` 时优先使
 | `PaymentMethod.CASHAPP` | `CASHAPP` | Cash App |
 | `PaymentMethod.ACH_DEBIT` | `ACH_DEBIT` | ACH 直接借记 |
 | `PaymentMethod.UPI` | `UPI` | 印度 UPI |
+| `PaymentMethod.APPLE_PAY` | `APPLE_PAY` | Apple Pay，仅支持代收 |
+| `PaymentMethod.GOOGLE_PAY` | `GOOGLE_PAY` | Google Pay，仅支持代收 |
 | `PaymentMethod.BTC_ON_CHAIN` | `BTC_ON_CHAIN` | 比特币链上支付，支持代收和代付 |
 | `PaymentMethod.BTC_LIGHT_NETWORK` | `BTC_LIGHT_NETWORK` | 比特币轻网络支付，仅支持代收 |
 | `PaymentMethod.PYUSD` | `PYUSD` | PayPal USD 稳定币支付，支持代收和代付 |

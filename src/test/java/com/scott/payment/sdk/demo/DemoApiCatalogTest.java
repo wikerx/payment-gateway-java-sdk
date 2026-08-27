@@ -22,10 +22,11 @@ class DemoApiCatalogTest {
     @Test
     void payinPages_shouldExposeAllNewPaymentMethods() {
         assertThat(optionValues(field("payin-checkout", "paymentMethodTypes")))
-                .contains("BTC_ON_CHAIN", "BTC_LIGHT_NETWORK", "PYUSD", "GOOGLE_OR_APPLE");
+                .contains("APPLE_PAY", "GOOGLE_PAY", "BTC_ON_CHAIN", "BTC_LIGHT_NETWORK", "PYUSD", "GOOGLE_OR_APPLE")
+                .doesNotHaveDuplicates();
 
         assertThat(optionValues(field("payin-direct", "paymentMethod")))
-                .contains("BTC_ON_CHAIN", "BTC_LIGHT_NETWORK", "PYUSD", "GOOGLE_OR_APPLE")
+                .contains("APPLE_PAY", "GOOGLE_PAY", "BTC_ON_CHAIN", "BTC_LIGHT_NETWORK", "PYUSD", "GOOGLE_OR_APPLE")
                 .doesNotHaveDuplicates();
     }
 

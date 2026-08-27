@@ -343,6 +343,8 @@ public final class DemoApiCatalog {
     private static List<DemoApiField.Option> payinPaymentMethodOptions() {
         return options(
                 option("CARD", "CARD - 信用卡"),
+                option("APPLE_PAY", "APPLE_PAY - Apple Pay"),
+                option("GOOGLE_PAY", "GOOGLE_PAY - Google Pay"),
                 option("CASHAPP", "CASHAPP - Cash App"),
                 option("PAY_PAL", "PAY_PAL - PayPal"),
                 option("VENMO", "VENMO - venmo"),

@@ -39,6 +39,16 @@ public enum PaymentMethod {
     UPI("UPI", "印度 UPI"),
 
     /**
+     * Apple Pay，仅支持代收。
+     */
+    APPLE_PAY("APPLE_PAY", "Apple Pay"),
+
+    /**
+     * Google Pay，仅支持代收。
+     */
+    GOOGLE_PAY("GOOGLE_PAY", "Google Pay"),
+
+    /**
      * 比特币链上支付，支持代收和代付。
      */
     BTC_ON_CHAIN("BTC_ON_CHAIN", "比特币链上支付"),

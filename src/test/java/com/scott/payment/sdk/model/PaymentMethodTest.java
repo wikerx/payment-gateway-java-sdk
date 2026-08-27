@@ -31,6 +31,8 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.CASHAPP.getCode()).isEqualTo("CASHAPP");
         assertThat(PaymentMethod.ACH_DEBIT.getCode()).isEqualTo("ACH_DEBIT");
         assertThat(PaymentMethod.UPI.getCode()).isEqualTo("UPI");
+        assertThat(PaymentMethod.APPLE_PAY.getCode()).isEqualTo("APPLE_PAY");
+        assertThat(PaymentMethod.GOOGLE_PAY.getCode()).isEqualTo("GOOGLE_PAY");
         assertThat(PaymentMethod.BTC_ON_CHAIN.getCode()).isEqualTo("BTC_ON_CHAIN");
         assertThat(PaymentMethod.BTC_LIGHT_NETWORK.getCode()).isEqualTo("BTC_LIGHT_NETWORK");
         assertThat(PaymentMethod.PYUSD.getCode()).isEqualTo("PYUSD");
@@ -47,6 +49,8 @@ class PaymentMethodTest {
         assertThat(PaymentMethod.fromCode("cashapp")).isEqualTo(PaymentMethod.CASHAPP);
         assertThat(PaymentMethod.fromCode("ACH_DEBIT")).isEqualTo(PaymentMethod.ACH_DEBIT);
         assertThat(PaymentMethod.fromCode("upi")).isEqualTo(PaymentMethod.UPI);
+        assertThat(PaymentMethod.fromCode("apple_pay")).isEqualTo(PaymentMethod.APPLE_PAY);
+        assertThat(PaymentMethod.fromCode(" GOOGLE_PAY ")).isEqualTo(PaymentMethod.GOOGLE_PAY);
         assertThat(PaymentMethod.fromCode("btc_on_chain")).isEqualTo(PaymentMethod.BTC_ON_CHAIN);
         assertThat(PaymentMethod.fromCode(" BTC_LIGHT_NETWORK ")).isEqualTo(PaymentMethod.BTC_LIGHT_NETWORK);
         assertThat(PaymentMethod.fromCode("pyusd")).isEqualTo(PaymentMethod.PYUSD);
