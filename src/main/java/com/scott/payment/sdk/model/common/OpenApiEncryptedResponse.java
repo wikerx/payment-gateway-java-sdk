@@ -11,7 +11,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : OpenApiEncryptedResponse
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 统一密文响应外壳，负责承载网关响应 code、msg、livemode 和加密 data。
  *                本类不表示最终业务响应 DTO，不执行响应解密，也不修改支付、退款、代付或资金状态；SDK 会先解析该外壳，再解密 data 并转换为业务响应对象。
  * @status : create

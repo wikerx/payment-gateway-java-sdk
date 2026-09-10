@@ -5,7 +5,7 @@ package com.scott.payment.sdk.model.common;
  * @version : v1.0.0
  * @classname : PaymentType
  * @date : 2026-07-02 14:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代收支付类型枚举，负责为商户 SDK 创建代收交易时的 payType 字段提供固定取值。
  *                本枚举只表达网关协议中的支付类型代码，不承载支付方式资料，不执行签名、OpenAPI 报文加密、资金扣款、
  *                幂等处理或交易状态流转；商户应根据 API 文档选择收银台或本地支付直连。

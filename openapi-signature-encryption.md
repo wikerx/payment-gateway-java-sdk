@@ -22,7 +22,7 @@ SDK 默认读取 classpath 下的 `merchant-config.properties`。当前 SDK 已�
 payment.gateway.base-url=http://localhost:58060
 payment.gateway.merchant-no=2606177036
 payment.gateway.livemode=false
-payment.gateway.api-private-key=pi_test_IiLeEu803nK1p8nt8KY9ENPmWrnLKuwKV4MyrGoYtjr78O6317yWhl4CnELIf1tFse53fhErDCthW7ecoi5XlFOoAd0yxdf1fvo
+payment.gateway.api-private-key=pi_prod_REPLACE_WITH_MERCHANT_API_PRIVATE_KEY
 payment.gateway.debug-raw-log-enabled=true
 payment.gateway.platform-request-public-key-path=classpath:keys/2606177036_PLATFORM_REQUEST_PUBLIC_KEY.pem
 payment.gateway.merchant-response-private-key-path=classpath:keys/2606177036_MERCHANT_RESPONSE_PRIVATE_KEY.pem

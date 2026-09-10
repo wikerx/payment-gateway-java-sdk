@@ -8,7 +8,7 @@ import java.util.Date;
  * @version : v1.0.0
  * @classname : OrderNoGenerator
  * @date : 2026-07-01 16:42
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK 本地订单号生成工具，负责为商户示例、测试用例和本地联调快速生成 merchantOrderNo。
  *                本类只保证单 JVM 进程内同一毫秒高并发生成不重复，不提供分布式全局唯一能力，不依赖数据库、Redis、Spring 或第三方工具库。
  *                生成结果不涉及资金计算、状态流转、签名、加密或外部渠道调用；商户生产系统如有全局订单号规则，应优先使用自身订单号体系。

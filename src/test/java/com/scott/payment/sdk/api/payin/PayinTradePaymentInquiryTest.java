@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayinTradePaymentInquiryTest
  * @date : 2026-07-02 11:38
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 检索代收交易接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并调用待发布的
  *                /pay-api/trade/payment/{tradeNo} 查询接口。本 case 只读取交易结果，不创建扣款、不退款、不修改交易状态；
  *                如果网关暂未发布该接口，可能返回业务失败或未支持响应，此时应以日志为准排查网关发布状态。

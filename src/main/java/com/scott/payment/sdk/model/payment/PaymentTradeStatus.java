@@ -5,7 +5,7 @@ package com.scott.payment.sdk.model.payment;
  * @version : v1.0.0
  * @classname : PaymentTradeStatus
  * @date : 2026-07-02 14:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代收交易状态枚举，负责把网关响应中的 status 数字映射为商户可读的状态码和状态说明。
  *                本枚举只用于 SDK 响应解析、日志展示和商户本地判断参考，不推进网关交易状态、不修改资金、不处理回调幂等、
  *                不替代商户系统最终状态机；最终交易结果仍应以查询接口或网关异步通知为准。

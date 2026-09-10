@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : FundAccountsBalanceInquiryRealTest
  * @date : 2026-07-02 12:05
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 检索余额接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/fund/accounts/get?currency=USD 请求。本 case 只读取商户资金账户余额，不修改余额、冻结金额、
  *                提现金额、清结算状态或交易状态；响应 data 由 SDK 按最新 OpenAPI 加密协议解密为余额列表。

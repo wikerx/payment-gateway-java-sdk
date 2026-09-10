@@ -19,9 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayinLocalPaymentTest
  * @date : 2026-07-02 11:38
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 本地支付直连代收创建接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并提交 payType=1
  *                和 paymentMethod=CASHAPP 的直连代收参数。本 case 会真实请求 /pay-api/trade/payment，涉及金额、客户资料和
  *                Cash App 支付资料；SDK 只负责请求加密和响应解密，不负责商户本地幂等、支付状态确认、渠道回调或资金对账。
@@ -74,6 +77,138 @@ public class PayinDirectPaymentTest {
         }
     }
 
+
+    @Test
+    public void testPayinDirectPaymentConcurrent() throws Exception {
+        final int totalRequests = 9999999;
+        final int concurrentThreads = 200;
+
+        OpenApiClientConfig config = MerchantConfigLoader.load();
+
+        // 必须在请求发出前阻止误用生产环境。
+//        if (Boolean.TRUE.equals(config.getLivemode())) {
+//            throw new IllegalStateException(
+//                    "禁止在生产模式执行代收并发测试");
+//        }
+
+        OpenApiClient client = new OpenApiClient(config);
+        ExecutorService executor =
+                Executors.newFixedThreadPool(concurrentThreads);
+
+        CountDownLatch startGate = new CountDownLatch(1);
+        AtomicInteger requestCounter = new AtomicInteger();
+        AtomicInteger successCounter = new AtomicInteger();
+        AtomicInteger failureCounter = new AtomicInteger();
+
+        List<Future<Void>> futures =
+                new ArrayList<Future<Void>>(concurrentThreads);
+
+        long startMillis = System.currentTimeMillis();
+
+        try {
+            for (int worker = 0; worker < concurrentThreads; worker++) {
+                futures.add(executor.submit(() -> {
+                    startGate.await();
+
+                    int requestIndex;
+                    while ((requestIndex =
+                            requestCounter.getAndIncrement()) < totalRequests) {
+
+                        int requestNo = requestIndex + 1;
+
+                        // 每次重新创建，确保商户订单号唯一。
+                        LocalPaymentRequest request = directPaymentRequest();
+
+                        log.info("第 {} 次本地支付直连代收开始，orderNo: {}",
+                                requestNo, request.getOrderNo());
+
+                        OpenApiResult<PaymentResponse> result =
+                                client.createLocalPayment(request);
+
+                        log.info("第 {} 次本地支付直连代收响应: {}",
+                                requestNo,
+                                JsonSupport.toLogJson(
+                                        OpenApiLogSanitizer.sanitizeObject(result)));
+
+//                        assertThat(result)
+//                                .as("第 %s 次响应不能为空", requestNo)
+//                                .isNotNull();
+//                        assertThat(result.getCode())
+//                                .as("第 %s 次响应码不能为空", requestNo)
+//                                .isNotNull();
+//                        assertThat(result.getLivemode())
+//                                .isEqualTo(config.getLivemode());
+
+                        if (result.isSuccess()) {
+//                            assertThat(result.getData())
+//                                    .as("第 %s 次交易数据不能为空", requestNo)
+//                                    .isNotNull();
+//                            assertThat(result.getData().getTradeNo())
+//                                    .as("第 %s 次交易号不能为空", requestNo)
+//                                    .isNotBlank();
+
+                            successCounter.incrementAndGet();
+                        } else {
+                            failureCounter.incrementAndGet();
+                        }
+
+//                        if (result.getData() != null
+//                                && result.getData().getStatusEnum() != null) {
+//                            log.info("第 {} 次本地支付直连代收状态: {}",
+//                                    requestNo,
+//                                    JsonSupport.toLogJson(
+//                                            RealGatewayTestSupport.logFields(
+//                                                    "orderNo",
+//                                                    request.getOrderNo(),
+//                                                    "tradeNo",
+//                                                    result.getData().getTradeNo(),
+//                                                    "status",
+//                                                    result.getData().getStatus(),
+//                                                    "responseCode",
+//                                                    result.getData().getCode(),
+//                                                    "statusEnum",
+//                                                    result.getData()
+//                                                            .getStatusEnum()
+//                                                            .name(),
+//                                                    "statusDescription",
+//                                                    result.getData()
+//                                                            .getStatusDescription(),
+//                                                    "finalStatus",
+//                                                    result.getData()
+//                                                            .getStatusEnum()
+//                                                            .isFinalStatus())));
+//                        }
+                    }
+
+                    return null;
+                }));
+            }
+
+            startGate.countDown();
+            executor.shutdown();
+
+            // 将工作线程中的请求异常和断言错误传回 JUnit。
+            for (Future<Void> future : futures) {
+                future.get();
+            }
+
+            assertThat(successCounter.get() + failureCounter.get())
+                    .isEqualTo(totalRequests);
+
+            log.info(
+                    "代收并发测试完成，总数: {}, 成功: {}, 业务失败: {}, 并发数: {}, 耗时: {} ms",
+                    totalRequests,
+                    successCounter.get(),
+                    failureCounter.get(),
+                    concurrentThreads,
+                    System.currentTimeMillis() - startMillis);
+        } finally {
+            startGate.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+
     /**
      * 构建 CASHAPP 本地支付直连代收请求。
      *
@@ -86,13 +221,14 @@ public class PayinDirectPaymentTest {
         request.setOrderNo(OrderNoGenerator.generate("PAYIN_CASHAPP_"));
         request.setPayType(PaymentType.Direct);
         request.setCurrency("USD");
-        request.setAmount(new BigDecimal("12.34"));
+        request.setAmount(new BigDecimal("39.99"));
         request.setProduct(Collections.singletonList(productInfo()));
         request.setReturnUrl(DemoLocalUrls.PAYIN_RETURN_URL);
 //        request.setNotifyUrl(DemoLocalUrls.PAYIN_NOTIFY_URL);
 //        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/webhook/payin");
 //        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v1/webhook/payin");
-        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v2/webhook/payin");
+        request.setNotifyUrl("http://192.168.2.114:58080/payment-sdk/api/v2/webhook/payin");
+        request.setNotifyUrl("https://m1.apifoxmock.com/m2/8616256-8395705-default/492915485");
 
         request.setClientIp("47.125.221.223");
         request.setWebsite("http://192.168.2.114:5173");

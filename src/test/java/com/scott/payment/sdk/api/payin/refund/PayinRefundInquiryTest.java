@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayinRefundInquiryTest
  * @date : 2026-07-02 11:38
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 检索退款接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/trade/refund/{refundNo} 请求。本 case 只读取退款申请处理结果，不创建退款、不修改资金状态；
  *                如果示例退款标识不存在，网关可能返回业务失败或空数据，商户应替换为自己退款申请返回的 charge/refundNo 后联调。

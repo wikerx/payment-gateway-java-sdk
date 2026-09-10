@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : CustomerRetrieveTest
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 检索客户接口真实网关调用 case，负责先创建一个沙盒客户，再向测试网关发起
  *                /pay-api/mer/customers/{customerId} 的 GET 查询请求。本 case 只读取客户资料，不修改客户、交易或资金状态；
  *                响应可能包含个人信息，日志会通过 OpenApiLogSanitizer 脱敏后输出。

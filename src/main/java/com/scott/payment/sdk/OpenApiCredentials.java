@@ -11,7 +11,7 @@ import java.util.Objects;
  * @version : v1.0.0
  * @classname : OpenApiCredentials
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 商户 OpenAPI 安全材料，负责集中承载商户号、JWT 签名密钥、平台请求公钥和商户响应私钥。
  *                本类只表达 SDK 本地安全配置，不负责发起请求、执行加解密算法、修改资金状态或处理外部渠道回调。
  *                JWT 密钥和商户响应私钥属于敏感数据，必须从 toString、普通日志和异常消息中排除。

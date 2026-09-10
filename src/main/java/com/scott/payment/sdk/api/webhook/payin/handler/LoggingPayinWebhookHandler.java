@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * @version : v1.0.0
  * @classname : LoggingPayinWebhookHandler
  * @date : 2026-07-02 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代收异步通知默认日志处理器，负责在商户未自定义处理器时输出验签通过后的回调摘要。
  *                本类不落库、不修改资金、不推进交易状态、不投递 MQ，也不保证生产幂等；只用于 SDK 示例和本地联调。
  *                商户生产环境应提供自己的 PayinWebhookHandler Bean，按 tradeNo/orderNo 做幂等、终态保护和对账。

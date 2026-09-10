@@ -9,7 +9,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : CustomerUpdateRequest
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 客户更新请求模型，负责承载商户更新客户资料时提交的姓名、邮箱、电话、证件、地址和收货地址资料。
  *                客户 ID 通过接口路径传入，本请求体不承载 customerId；请求包含个人信息和证件号等敏感字段，SDK 会加密 data 并脱敏日志。
  *                本类不负责客户幂等、KYC、状态流转、交易资金处理或外部渠道同步。

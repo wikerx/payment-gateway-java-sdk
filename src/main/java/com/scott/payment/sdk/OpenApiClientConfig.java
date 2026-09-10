@@ -16,7 +16,7 @@ import java.time.Clock;
  * @version : v1.0.0
  * @classname : OpenApiClientConfig
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK 客户端运行配置，负责承载商户号、livemode、JWT API 密钥、平台请求公钥、商户响应私钥和 HTTP 基础参数。
  *                本类只做配置表达和本地完整性校验，不负责发起 HTTP 请求、资金状态处理或外部渠道调用。
  *                API 私钥和商户响应私钥属于敏感数据，必须通过 Lombok toString 排除；原始 HTTP 日志只用于沙盒联调核验。

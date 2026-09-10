@@ -5,7 +5,7 @@ package com.scott.payment.sdk.exception;
  * @version : v1.0.0
  * @classname : OpenApiException
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI SDK 根异常，负责统一表达本地配置、签名、加密、HTTP 调用或响应解析失败。
  *                本异常不代表网关已经修改资金或交易状态；业务失败应优先读取 OpenApiResult 的 code 和 msg。
  *                异常消息不得拼接 JWT、私钥、完整密文、卡号或 CVC 等敏感数据。

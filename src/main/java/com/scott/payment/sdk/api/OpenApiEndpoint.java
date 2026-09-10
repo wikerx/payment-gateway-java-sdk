@@ -9,7 +9,7 @@ import lombok.Getter;
  * @version : v1.0.0
  * @classname : OpenApiEndpoint
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 商户 OpenAPI 元数据枚举，负责集中维护 SDK 已集成接口的 API 名称、HTTP 方法和路径模板。
  *                本枚举不负责请求加密、响应解密、资金状态流转或幂等控制；路径常量仍由 OpenApiConstants 维护，避免重复定义接口地址。
  * @status : create

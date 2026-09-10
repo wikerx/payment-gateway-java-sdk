@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayoutTradeTransferInquiryTest
  * @date : 2026-07-02 11:22
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 检索代付交易接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/payout/trade/transfer/{tradeNo} 请求。本 case 只读取代付交易结果，不提交资金变更、不修改交易状态、
  *                不负责商户本地幂等、终态保护或对账处理；响应 data 由 SDK 按最新 OpenAPI 加密协议解密后输出。

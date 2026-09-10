@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OrderNoGeneratorTest
  * @date : 2026-07-01 16:42
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 本地订单号生成工具测试，负责验证 SDK 示例订单号在单次、连续和多线程场景下的格式与单 JVM 不重复约束。
  *                本测试不访问数据库、Redis 或外部服务，不发起支付、代付、退款请求，不修改资金、密钥或配置状态。
  * @status : create

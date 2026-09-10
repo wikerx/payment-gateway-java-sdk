@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OpenApiPayloadPartsReferenceTest
  * @date : 2026-07-01 19:42
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI compact payload 拆分字段参考用例，负责演示商户如何从 SDK 加密结果中读取 protectedHeader、header、encryptedAesKey、iv、cipherText 和 tag。
  *                本测试只构造本地示例数据，不发起真实 HTTP 请求，不创建支付订单，不修改支付、代付、退款、客户、资金、密钥或配置状态。
  *                示例日志用于商户沙盒联调和 Apifox 文档引用，卡号、CVC 等敏感明文字段必须脱敏输出，完整密文字段仅建议在受控排查场景短期开启。

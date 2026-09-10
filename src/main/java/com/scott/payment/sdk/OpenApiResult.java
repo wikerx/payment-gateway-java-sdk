@@ -11,7 +11,7 @@ import lombok.Builder;
  * @version : v1.0.0
  * @classname : OpenApiResult
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 通用响应模型，负责向商户返回业务 code、msg、解密后的 data 和 livemode。
  *                本类不承载密文 data，不执行响应解密，不修改交易、退款、代付或资金状态；状态流转和幂等仍由网关服务端负责。
  *                data 可能包含交易、客户或余额信息，商户输出日志前需要按自身安全规范处理。

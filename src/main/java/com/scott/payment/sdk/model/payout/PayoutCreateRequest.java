@@ -14,7 +14,7 @@ import java.util.Set;
  * @version : v1.0.0
  * @classname : PayoutCreateRequest
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付创建请求模型，负责承载商户发起出款申请时提交的订单、金额、客户资料和收款支付方式参数。
  *                本类只描述请求字段和本地枚举赋值兼容逻辑，不执行 JWT 签名、OpenAPI 报文加密、HTTP 调用、资金扣减、幂等落库、状态流转或渠道出款。
  *                amount 涉及资金金额，paymentMethodData 可能包含卡号、银行账号等敏感收款资料，商户侧不得在普通日志中直接输出完整对象。

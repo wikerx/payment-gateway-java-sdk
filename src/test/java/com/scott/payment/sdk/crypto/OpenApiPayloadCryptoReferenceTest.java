@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OpenApiPayloadCryptoReferenceTest
  * @date : 2026-07-01 14:12
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 报文加密参考用例，负责演示商户如何使用 SDK 方法完成请求加密、compact payload 拆分和响应解密。
  *                本测试只构造本地示例数据，不发起真实 HTTP 请求，不创建支付订单，不修改支付、代付、退款、客户、资金、密钥或配置状态。
  *                示例日志用于商户沙盒联调和文档引用，卡号、CVC 等敏感明文字段必须脱敏输出，完整密文字段仅建议在受控排查场景短期开启。

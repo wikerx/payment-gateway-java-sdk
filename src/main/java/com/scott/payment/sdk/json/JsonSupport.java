@@ -17,7 +17,7 @@ import java.util.List;
  * @version : v1.0.0
  * @classname : JsonSupport
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK JSON 序列化工具，负责统一控制请求序列化、响应反序列化、列表解析和未知字段容忍策略。
  *                本类不执行签名、加密、HTTP 调用或资金状态处理；序列化对象可能包含敏感业务字段，调用方输出日志前必须先脱敏。
  * @status : modify

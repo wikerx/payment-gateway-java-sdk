@@ -8,7 +8,7 @@ import java.util.Map;
  * @version : v1.0.0
  * @classname : RealGatewayTestSupport
  * @date : 2026-07-02 11:38
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 真实网关联调用例辅助类，负责提供有序日志字段构造。
  *                本类不探测或跳过网关请求，不发起 OpenAPI 业务请求、不执行签名加密、不创建支付、退款或代付交易，也不修改资金和交易状态。
  *                真实业务调用仍由各个 payin、payout、refund case 显式完成，便于商户直接阅读接口参数。

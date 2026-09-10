@@ -5,7 +5,7 @@ package com.scott.payment.sdk.model.refund;
  * @version : v1.0.0
  * @classname : RefundTradeStatus
  * @date : 2026-07-02 14:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 退款交易状态枚举，负责把网关响应中的 status 数字映射为商户可读的状态码和状态说明。
  *                本枚举只用于 SDK 响应解析、日志展示和商户本地判断参考，不提交退款、不推进网关状态、不处理资金入账或对账、
  *                不替代商户系统的退款幂等和终态保护；最终退款结果应以查询接口或网关异步通知为准。

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayinCheckoutPaymentTest
  * @date : 2026-07-02 11:38
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 收银台代收创建接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/trade/payment 请求。本 case 会真实创建沙盒代收交易，涉及金额、回跳地址和异步通知地址；
  *                不负责商户本地幂等落库、支付完成确认、回调处理或资金对账。

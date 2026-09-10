@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : JsonSupportTest
  * @date : 2026-07-02 16:52
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK JSON 序列化测试，负责验证商户联调日志中的金额字段不会输出科学计数法。
  *                本测试不发起 HTTP 请求、不执行 OpenAPI 加密、不修改资金状态，只锁定 BigDecimal 日志展示格式。
  * @status : create

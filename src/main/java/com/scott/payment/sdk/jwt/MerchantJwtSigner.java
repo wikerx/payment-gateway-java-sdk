@@ -17,7 +17,7 @@ import java.util.Date;
  * @version : v1.0.0
  * @classname : MerchantJwtSigner
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 商户 JWT HS256 签名器，负责按网关 MerchantJwtVerifier 约束生成 Bearer JWT。
  *                本类不加密请求体、不发起 HTTP 请求、不修改资金或交易状态；签名密钥和生成后的 JWT 都属于敏感鉴权材料。
  * @status : modify

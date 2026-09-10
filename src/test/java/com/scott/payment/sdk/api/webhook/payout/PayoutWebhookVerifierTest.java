@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayoutWebhookVerifierTest
  * @date : 2026-07-02 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付异步通知签名校验测试，负责验证 SDK 与网关当前 t + tradeNo + currency + amount + status + code + message 的 SHA-256 签名规则一致。
  *                本测试不启动 Web 容器，不发起 HTTP 请求，不修改资金、交易状态或密钥配置。
  * @status : create

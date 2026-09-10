@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * @version : v1.0.0
  * @classname : RsaKeyUtils
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : RSA 密钥解析工具，负责将 PEM 或 DER Base64 文本转换为 X.509 公钥、PKCS#8 私钥或 PEM 输出文本。
  *                本类不生成密钥、不轮换密钥、不访问远程服务；私钥文本属于敏感数据，不得写入普通日志或异常消息。
  * @status : modify

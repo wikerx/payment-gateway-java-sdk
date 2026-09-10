@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @version : v1.0.0
  * @classname : PayoutWebhookControllerTest
  * @date : 2026-07-02 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付异步通知 Controller 测试，负责验证 GET 回调参数绑定、Header 签名校验和业务处理器调用边界。
  *                本测试使用 MockMvc，不启动真实端口、不发起外部 HTTP 请求、不修改资金或交易状态。
  * @status : create

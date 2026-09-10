@@ -21,7 +21,7 @@ import java.util.Map;
  * @version : v1.0.0
  * @classname : Jdk8HttpTransport
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 基于 Java 8 HttpURLConnection 的默认 HTTP 传输实现，负责发送 SDK 构造好的 OpenAPI HTTP 请求并读取响应。
  *                本类不生成 JWT、不加密请求、不解密响应，也不判断支付、退款、代付或资金状态；网络异常时由上层查询接口确认业务结果。
  * @status : modify

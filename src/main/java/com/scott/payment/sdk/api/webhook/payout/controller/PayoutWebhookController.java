@@ -21,7 +21,7 @@ import java.util.Map;
  * @version : v1.0.0
  * @classname : PayoutWebhookController
  * @date : 2026-07-02 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付异步通知接收 Controller，负责接收网关以 GET form 参数发送到商户 notifyUrl 的代付结果回调。
  *                本类只做 HTTP 参数接收、签名校验、日志记录和处理器委托，不直接落库、不修改资金、不推进交易状态、不投递 MQ。
  *                商户生产接入时必须在自定义 PayoutWebhookHandler 中基于 tradeNo 或 orderNo 做幂等、终态保护和资金对账。

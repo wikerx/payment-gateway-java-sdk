@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OpenApiLogSanitizerTest
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI SDK 日志辅助测试，负责验证卡号、账户号、Authorization 和 body 摘要等日志脱敏行为。
  *                本测试不涉及资金变更、密钥轮换或外部渠道调用，只校验日志输出边界。
  * @status : modify

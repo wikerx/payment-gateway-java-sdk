@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : CustomerUpdateTest
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 更新客户接口真实网关调用 case，负责先创建一个沙盒客户，再向测试网关发起
  *                /pay-api/mer/customers/{customerId} 的 PUT 更新请求。本 case 会真实修改沙盒客户资料，涉及个人信息和证件号等敏感数据；
  *                SDK 会按最新 OpenAPI 协议完成请求加密和响应解密。本 case 不负责商户本地客户资料同步、KYC、状态流转或外部渠道同步。

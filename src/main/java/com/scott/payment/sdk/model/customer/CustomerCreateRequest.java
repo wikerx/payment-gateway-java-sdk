@@ -9,7 +9,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : CustomerCreateRequest
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 客户创建请求模型，负责承载商户创建客户时提交的姓名、邮箱、电话、证件、地址和收货地址资料。
  *                本类包含客户个人信息和证件号等敏感字段，SDK 会在请求时加密 data 并在日志中脱敏；本类不负责 KYC、客户去重、
  *                商户本地客户幂等落库、客户状态流转或外部渠道同步。

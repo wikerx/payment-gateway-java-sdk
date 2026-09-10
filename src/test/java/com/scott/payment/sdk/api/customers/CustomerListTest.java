@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : CustomerListTest
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 列出所有客户接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/mer/customers 的 GET 请求。本 case 只读取客户列表，不创建、不更新、不删除客户资料；
  *                响应可能包含个人信息，日志会通过 OpenApiLogSanitizer 脱敏后输出。

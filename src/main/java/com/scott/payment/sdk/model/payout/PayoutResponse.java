@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  * @version : v1.0.0
  * @classname : PayoutResponse
  * @date : 2026-07-02 14:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付交易响应模型，负责承载网关返回的代付交易标识、金额、支付方式、完成时间和状态信息。
  *                本类只做响应字段承载和状态枚举映射，不执行响应解密、出款、渠道回调处理、幂等落库或交易状态推进。
  *                amount 涉及资金金额，tradeNo/orderNo 是商户对账关键字段，日志输出应保证可追踪但不得混淆生产资金结果。

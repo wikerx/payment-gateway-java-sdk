@@ -1,5 +1,8 @@
 package com.scott.payment.sdk.api.customers;
 
+import com.apifan.common.random.source.AreaSource;
+import com.apifan.common.random.source.InternetSource;
+import com.apifan.common.random.source.PersonInfoSource;
 import com.scott.payment.sdk.OpenApiClient;
 import com.scott.payment.sdk.OpenApiResult;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
@@ -17,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : CustomerApiTestSupport
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 客户 API 真实网关测试辅助类，负责为创建、更新、检索、删除和列表 case 构造唯一测试客户资料。
  *                本类只服务 SDK 测试示例，不直接代表商户生产代码；构造的请求包含邮箱、电话、地址和证件号等敏感字段，
  *                调用方输出日志前必须继续使用 OpenApiLogSanitizer 脱敏。本类不负责客户幂等落库、KYC、状态流转或外部渠道同步。
@@ -46,17 +49,18 @@ final class CustomerApiTestSupport {
     static CustomerCreateRequest createRequest() {
         String suffix = OrderNoGenerator.generate("CUS_");
         CustomerCreateRequest request = new CustomerCreateRequest();
-        request.setFirstname("Lily");
-        request.setLastname("Brown");
-        request.setEmail("lily_brown_" + suffix + TEST_EMAIL_DOMAIN);
-        request.setPhone("13628173752");
+        String name[] = PersonInfoSource.getInstance().randomEnglishName().split(" ");
+        request.setFirstname(name[0]);
+        request.setLastname(name[1]);
+        request.setEmail(InternetSource.getInstance().randomEmail(10));
+        request.setPhone(PersonInfoSource.getInstance().randomChineseMobile());
         request.setIdentityType("PASSPORT");
-        request.setIdentityNo("P" + suffix);
+        request.setIdentityNo(PersonInfoSource.getInstance().randomFemaleIdCard("河北省", 19));
         request.setCountry("US");
         request.setState("CA");
-        request.setCity("Los Angeles");
-        request.setAddress("123 Main St, Apt 4B");
-        request.setZipcode("90001");
+        request.setCity(AreaSource.getInstance().randomCity(","));
+        request.setAddress(AreaSource.getInstance().randomAddress());
+        request.setZipcode(AreaSource.getInstance().randomZipCode());
         return request;
     }
 

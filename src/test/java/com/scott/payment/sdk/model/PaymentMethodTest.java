@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @version : v1.0.0
  * @classname : PaymentMethodTest
  * @date : 2026-07-01 17:43
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 支付方式枚举测试，负责验证 SDK 暴露给商户的 paymentMethod 枚举值、解析逻辑和请求模型序列化兼容性。
  *                本测试不发起 HTTP 请求，不执行签名、加密、资金计算、状态流转或外部渠道调用。
  * @status : create

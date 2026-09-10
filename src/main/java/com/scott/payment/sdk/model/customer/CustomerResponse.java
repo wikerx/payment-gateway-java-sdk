@@ -8,7 +8,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : CustomerResponse
  * @date : 2026-07-02 18:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 客户响应模型，负责承载网关创建、更新、检索和列表接口返回的客户资料。
  *                响应可能包含姓名、邮箱、电话、证件号和地址等敏感个人信息，SDK 示例日志会做脱敏；本类不负责商户本地客户状态流转、
  *                KYC 结果判断、外部渠道同步或交易资金处理。

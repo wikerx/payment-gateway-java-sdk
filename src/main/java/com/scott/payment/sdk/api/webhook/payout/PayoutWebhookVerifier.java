@@ -15,7 +15,7 @@ import java.util.Map;
  * @version : v1.0.0
  * @classname : PayoutWebhookVerifier
  * @date : 2026-07-02 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付异步通知签名校验器，负责按网关回调规则拼接 t、tradeNo、currency、amount、status、code、message 并计算 SHA-256 hex。
  *                本类只做本地签名摘要计算和常量时间比较，不做 HTTP 接收、不落库、不修改资金、不推进状态，也不访问外部渠道。
  *                当前代付回调签名规则未使用 merchant-config.properties 中的 API 私钥；如网关文档升级为带密钥签名，需要同步调整本类和测试。

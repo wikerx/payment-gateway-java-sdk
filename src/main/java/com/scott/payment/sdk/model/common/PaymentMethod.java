@@ -5,7 +5,7 @@ package com.scott.payment.sdk.model.common;
  * @version : v1.0.0
  * @classname : PaymentMethod
  * @date : 2026-07-01 17:43
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 支付方式枚举，负责为商户 SDK 请求中的 paymentMethod 字段提供固定取值，避免商户手写字符串导致参数错误。
  *                本枚举只表达支付方式代码和展示说明，不承载支付方式扩展参数，不执行签名、加密、资金计算、状态流转或外部渠道调用。
  *                枚举 code 必须与网关 API 文档保持一致，新增或废弃支付方式时需要同步更新 SDK 示例和商户文档。

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OpenApiClientEncryptedPayloadLogTest
  * @date : 2026-07-01 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK 加密 payload 日志拆分测试，负责验证文档联调用的 protectedHeader、header、encryptedAesKey、iv、cipherText 和 tag 字段映射。
  *                本测试不发起真实 HTTP 请求、不修改资金或交易状态；字段值属于密文结构，仅用于沙盒文档核验。
  * @status : create

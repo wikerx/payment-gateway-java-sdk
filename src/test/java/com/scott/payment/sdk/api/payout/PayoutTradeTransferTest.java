@@ -16,9 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayoutTradeTransferTest
  * @date : 2026-07-01 16:36
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付申请接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起 /pay-api/payout/trade/transfer 请求。
  *                本 case 会真实发起 HTTP 请求并可能创建测试代付交易，涉及资金出款申请、客户资料、卡号和 CVC 等敏感数据。
  *                本 case 只用于商户沙盒联调和 SDK 接入参考，不负责生产幂等落库、状态流转、渠道回调或资金最终状态确认。
@@ -69,6 +72,108 @@ public class PayoutTradeTransferTest {
         assertThat(result.getLivemode()).isEqualTo(false);
     }
 
+
+
+    @Test
+    public void testPayoutTradeTransferConcurrent() throws Exception {
+        final int totalRequests = 9999999;
+        final int concurrentThreads = 200;
+
+        OpenApiClientConfig config = MerchantConfigLoader.load();
+
+        // 必须在发送请求前拦截，避免误向生产环境批量创建代付。
+//        if (Boolean.TRUE.equals(config.getLivemode())) {
+//            throw new IllegalStateException(
+//                    "禁止在生产模式执行代付并发测试");
+//        }
+
+        OpenApiClient client = new OpenApiClient(config);
+        ExecutorService executor =
+                Executors.newFixedThreadPool(concurrentThreads);
+
+        CountDownLatch startGate = new CountDownLatch(1);
+        AtomicInteger requestCounter = new AtomicInteger();
+        AtomicInteger successCounter = new AtomicInteger();
+        List<Future<Void>> futures =
+                new ArrayList<Future<Void>>(concurrentThreads);
+
+        long startMillis = System.currentTimeMillis();
+
+        try {
+            // 只创建 concurrentThreads 个工作任务，避免大量 Future 占用内存。
+            for (int worker = 0; worker < concurrentThreads; worker++) {
+                futures.add(executor.submit(() -> {
+                    startGate.await();
+
+                    int requestIndex;
+                    while ((requestIndex =
+                            requestCounter.getAndIncrement()) < totalRequests) {
+
+                        int requestNo = requestIndex + 1;
+
+                        // 每次都创建新请求，确保 orderNo 唯一。
+                        PayoutCreateRequest request = payoutCreateRequest();
+
+//                        log.info("第 {} 次代付申请开始，orderNo: {}",
+//                                requestNo, request.getOrderNo());
+
+                        OpenApiResult<PayoutResponse> result =
+                                client.createPayout(request);
+
+//                        log.info("第 {} 次代付申请响应: {}",
+//                                requestNo,
+//                                JsonSupport.toLogJson(
+//                                        OpenApiLogSanitizer.sanitizeObject(result)));
+//
+//                        if (result.getData().getStatusEnum() != null) {
+//                            log.info("第 {} 次代付交易状态: {}",
+//                                    requestNo,
+//                                    JsonSupport.toLogJson(logFields(
+//                                            "orderNo", request.getOrderNo(),
+//                                            "tradeNo", result.getData().getTradeNo(),
+//                                            "status", result.getData().getStatus(),
+//                                            "responseCode", result.getData().getCode(),
+//                                            "responseMessage", result.getData().getMessage(),
+//                                            "statusEnum",
+//                                            result.getData().getStatusEnum().name(),
+//                                            "finalStatus",
+//                                            result.getData()
+//                                                    .getStatusEnum()
+//                                                    .isFinalStatus())));
+//                        }
+
+                        successCounter.incrementAndGet();
+                    }
+
+                    return null;
+                }));
+            }
+
+            // 让首批工作线程同时发起请求。
+            startGate.countDown();
+            executor.shutdown();
+
+            // Future.get() 会将子线程中的异常传回 JUnit 主线程。
+            for (Future<Void> future : futures) {
+                future.get();
+            }
+
+            assertThat(successCounter.get()).isEqualTo(totalRequests);
+
+            log.info("代付并发测试完成，总请求数: {}, 成功数: {}, 并发数: {}, 耗时: {} ms",
+                    totalRequests,
+                    successCounter.get(),
+                    concurrentThreads,
+                    System.currentTimeMillis() - startMillis);
+        } finally {
+            startGate.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+
+
+
     /**
      * @description : 构建请求参数
      * @author      : scott
@@ -80,10 +185,11 @@ public class PayoutTradeTransferTest {
         PayoutCreateRequest request = new PayoutCreateRequest();
         request.setOrderNo(OrderNoGenerator.generate("PAYOUT_"));
         request.setCurrency("USD");
-        request.setAmount(new BigDecimal("3.11"));
+        request.setAmount(new BigDecimal("39.99"));
 //        Option
 //        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v1/webhook/payout");
-        request.setNotifyUrl("http://127.0.0.1:58080/payment-sdk/api/v2/webhook/payout");
+//        request.setNotifyUrl("http://192.168.2.114:58080/payment-sdk/api/v2/webhook/payout");
+        request.setNotifyUrl("https://m1.apifoxmock.com/m2/8616256-8395705-default/492915485");
 
         request.setClientIp("47.125.221.223");
         request.setWebsite("https://manage.forgottenthrone.com/");
@@ -91,14 +197,14 @@ public class PayoutTradeTransferTest {
 //        Option
         request.setMetadata("metadata");
 
-        request.setPaymentMethod(PaymentMethod.CASHAPP);
-        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
+//        request.setPaymentMethod(PaymentMethod.CASHAPP);
+//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CASHAPP.getCode()));
 
 //        request.setPaymentMethod(PaymentMethod.CARD);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.CARD.getCode()));
 
-//        request.setPaymentMethod(PaymentMethod.PAY_PAL);
-//        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
+        request.setPaymentMethod(PaymentMethod.PAY_PAL);
+        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.PAY_PAL.getCode()));
 
 //        request.setPaymentMethod(PaymentMethod.UPI);
 //        request.setPaymentMethodData(cardPaymentMethodData(PaymentMethod.UPI.getCode()));

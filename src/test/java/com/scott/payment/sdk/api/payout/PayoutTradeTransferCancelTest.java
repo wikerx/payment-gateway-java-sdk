@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : PayoutTradeTransferCancelTest
  * @date : 2026-07-02 11:22
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 代付取消申请接口真实网关调用 case，负责使用 merchant-config.properties 创建 SDK 客户端并向测试网关发起
  *                /pay-api/payout/trade/transfer-cancel 请求。本 case 会真实请求网关并可能触发代付取消业务校验；
  *                如果交易已成功或已进入不可取消状态，网关可能返回业务失败。本 case 只证明 SDK 已按最新 OpenAPI 加密协议

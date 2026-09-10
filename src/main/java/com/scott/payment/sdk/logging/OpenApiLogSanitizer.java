@@ -14,7 +14,7 @@ import java.util.ArrayList;
  * @version : v1.0.0
  * @classname : OpenApiLogSanitizer
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI SDK 日志辅助工具，负责 Header、业务请求对象、密文外壳和响应对象的日志脱敏与摘要处理。
  *                本类不参与请求签名、加密、资金处理或外部渠道调用；卡号、CVC、JWT、邮箱、手机号、证件号和密钥类字段不得完整进入默认日志。
  * @status : modify

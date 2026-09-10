@@ -13,7 +13,7 @@ import java.util.Map;
  * @version : v1.0.0
  * @classname : OpenApiTestSupport
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK 测试支撑工具，负责加载 2606177036 沙盒商户配置并提供金额构造等测试辅助方法。
  *                本类不新增数据库测试数据，不发起真实外部渠道调用；返回的 API 密钥仅用于本地构造 JWT。
  * @status : modify

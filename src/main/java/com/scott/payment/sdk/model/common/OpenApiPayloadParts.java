@@ -11,7 +11,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : OpenApiPayloadParts
  * @date : 2026-07-01 14:12
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI compact 加密 payload 拆分结果，负责表达 data 字段中的 protectedHeader、header、encryptedAesKey、iv、cipherText 和 tag。
  *                本类只承载密文结构拆分结果，不执行加解密算法，不发起 HTTP 请求，不读取或轮换密钥，不修改支付、退款、代付、客户或资金状态。
  *                encryptedAesKey 和 cipherText 属于密文调试材料，适用于商户沙盒联调、文档核验和受控排查，不参与商户侧签名、对账、清分或结算。

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : MerchantJwtSignerTest
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 商户 JWT 签名器测试，负责验证 HS256 签名和网关要求的 issuer、audience、merchantId、livemode、jti claims。
  *                本测试只解析本地生成的 JWT，不输出完整 token 或 API 私钥，不发起 HTTP 请求，不修改支付、代付、退款、客户、资金、密钥或配置状态。
  * @status : modify

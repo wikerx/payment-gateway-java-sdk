@@ -57,7 +57,7 @@ import java.util.UUID;
  * @version : v1.0.0
  * @classname : OpenApiClient
  * @date : 2026-06-30 10:28
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : 商户 OpenAPI Java SDK 客户端，负责请求签名、请求加密、响应解密、HTTP 调用和基础参数校验。
  *                本类不负责商户业务幂等落库、资金状态流转或渠道回调处理；支付、退款、代付、余额和客户等商户 OpenAPI 请求会按服务端最新协议使用 Bearer JWT 与 JWE data。
  *                配置中包含 API 私钥、平台请求公钥和商户响应私钥；沙盒联调开启原始日志后会输出完整 Header、明文请求、密文请求、密文响应和解密响应。
@@ -1015,9 +1015,8 @@ public class OpenApiClient {
         if (withBody) {
             headers.put(OpenApiConstants.HEADER_CONTENT_TYPE, OpenApiConstants.CONTENT_TYPE);
         }
-        String headersJson = JsonSupport.toLogJson(OpenApiLogSanitizer.sanitizeHeaders(headers));
+        String headersJson = JsonSupport.toJson(headers);
         log.info("请求头: {}", headersJson);
-        log.debug("请求头: {}", headersJson);
 
         return headers;
     }

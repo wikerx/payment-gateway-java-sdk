@@ -5,7 +5,7 @@ package com.scott.payment.sdk.config;
  * @version : v1.0.0
  * @classname : OpenApiConstants
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI SDK 内部固定协议常量，负责集中维护配置文件名、HTTP Header、JWT、compact payload 和商户接口路径。
  *                本类不读取商户配置、不执行签名或加密、不修改资金状态；涉及路径和协议值的变更必须与网关 OpenAPI 规范同步。
  * @status : create

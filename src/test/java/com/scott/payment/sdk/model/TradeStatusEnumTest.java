@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : TradeStatusEnumTest
  * @date : 2026-07-02 14:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : SDK 交易状态和支付类型枚举测试，负责验证商户示例中常用的 payType 与响应 status 映射关系。
  *                本测试不发起真实 HTTP 请求、不执行签名加密、不创建支付、代付或退款交易，也不修改资金和交易状态。
  * @status : create

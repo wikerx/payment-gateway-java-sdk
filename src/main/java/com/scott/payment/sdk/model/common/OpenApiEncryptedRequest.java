@@ -11,7 +11,7 @@ import lombok.ToString;
  * @version : v1.0.0
  * @classname : OpenApiEncryptedRequest
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 统一密文请求外壳，负责承载 livemode 和加密后的 data 字段。
  *                本类不承载业务字段、不执行加密算法、不参与资金状态流转；data 为 compact JWE 结构，日志输出必须受调试开关和脱敏策略控制。
  * @status : create

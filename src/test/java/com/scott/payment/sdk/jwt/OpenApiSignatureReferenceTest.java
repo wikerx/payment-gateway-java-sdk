@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @version : v1.0.0
  * @classname : OpenApiSignatureReferenceTest
  * @date : 2026-07-01 15:18
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 签名和请求头参考用例，负责演示商户如何基于 merchant-config.properties 生成 Bearer JWT、Authorization、X-Request-Id、POST 请求体和 GET 请求头。
  *                本测试只构造本地示例数据，不发起真实 HTTP 请求，不创建支付订单，不修改支付、代付、退款、客户、资金、密钥或配置状态。
  *                示例日志用于商户沙盒联调和 Apifox 文档引用，完整 API 私钥和完整 JWT 不得输出，Authorization 日志必须脱敏。

@@ -29,7 +29,7 @@ import java.util.Objects;
  * @version : v1.0.0
  * @classname : OpenApiPayloadCrypto
  * @date : 2026-07-01 11:08
- * @email : scott_x@163.com
+ * @email : scott-***@163.com
  * @description : OpenAPI 报文混合加解密组件，负责按 RSA-OAEP-SHA256 + AES-256-GCM compact 协议加密请求 data 和解密响应 data。
  *                本类不签发 JWT、不发起 HTTP 请求、不修改支付、退款、代付或资金状态；明文只应存在于调用链内存中，普通日志不得输出。
  *                加解密失败会抛出 SDK 加解密异常，异常消息不得携带明文、私钥或完整密文。
