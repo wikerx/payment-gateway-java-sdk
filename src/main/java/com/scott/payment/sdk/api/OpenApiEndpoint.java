@@ -79,7 +79,7 @@ public enum OpenApiEndpoint {
     CUSTOMER_DELETE("Customer Delete", "DELETE", OpenApiConstants.CUSTOMER_DELETE_PATH),
 
     /**
-     * 列出所有客户，GET 请求，无请求体，响应 data 需要解密为客户列表。
+     * 分页列出客户，GET 请求，无请求体，响应 data 需要解密为客户分页对象。
      */
     CUSTOMER_LIST("Customer List", "GET", OpenApiConstants.CUSTOMER_LIST_PATH);
 

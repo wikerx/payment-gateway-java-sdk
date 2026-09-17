@@ -23,6 +23,7 @@ import com.scott.payment.sdk.model.common.OpenApiPayloadParts;
 import com.scott.payment.sdk.model.common.PaymentMethod;
 import com.scott.payment.sdk.model.common.ProductInfo;
 import com.scott.payment.sdk.model.customer.CustomerCreateRequest;
+import com.scott.payment.sdk.model.customer.CustomerPageResponse;
 import com.scott.payment.sdk.model.customer.CustomerResponse;
 import com.scott.payment.sdk.model.customer.CustomerUpdateRequest;
 import com.scott.payment.sdk.model.payment.CardPaymentRequest;
@@ -65,6 +66,10 @@ import java.util.UUID;
  */
 @Slf4j
 public class OpenApiClient {
+
+    private static final int MIN_PAGE_NO = 1;
+    private static final int MIN_PAGE_SIZE = 1;
+    private static final int MAX_CUSTOMER_PAGE_SIZE = 100;
 
     /**
      * HTTP 调用后的密文响应和链路 requestId。
@@ -427,17 +432,40 @@ public class OpenApiClient {
     }
 
     /**
-     * 列出所有客户。
+     * 使用服务端默认分页参数列出客户。
      *
-     * 该方法通过 GET + Bearer JWT 调用客户列表接口，不发送请求体，响应 data 自动解密为客户列表。
+     * 该方法通过 GET + Bearer JWT 调用客户列表接口，不发送请求体；服务端默认返回第一页，每页 100 条，
+     * 响应 data 自动解密为包含列表和分页元数据的对象。
      * 返回内容可能包含个人信息，商户日志、导出和页面展示仍需按自身合规要求脱敏。
      *
-     * @return 客户列表响应
+     * @return 客户分页响应
      */
-    public OpenApiResult<List<CustomerResponse>> listCustomers() {
-        return getListSecured(OpenApiEndpoint.CUSTOMER_LIST,
-                OpenApiEndpoint.CUSTOMER_LIST.getPath(),
-                CustomerResponse.class,
+    public OpenApiResult<CustomerPageResponse> listCustomers() {
+        return getSecured(OpenApiEndpoint.CUSTOMER_LIST,
+                CustomerPageResponse.class,
+                uniqueJwtId("CUSTOMER_LIST_"));
+    }
+
+    /**
+     * 按指定页码列出客户。
+     *
+     * <p>pageNo 必须从 1 开始，pageSize 必须在 1 到 100 之间。参数会在 HTTP 请求发出前完成校验，
+     * 避免无效请求占用网关和数据库资源。</p>
+     *
+     * @param pageNo 页码，从 1 开始
+     * @param pageSize 每页数量，最大 100
+     * @return 客户分页响应
+     */
+    public OpenApiResult<CustomerPageResponse> listCustomers(int pageNo, int pageSize) {
+        validateCustomerPage(pageNo, pageSize);
+        String path = OpenApiEndpoint.CUSTOMER_LIST.getPath()
+                + "?pageNo=" + pageNo
+                + "&pageSize=" + pageSize;
+        return execute(OpenApiEndpoint.CUSTOMER_LIST,
+                path,
+                null,
+                null,
+                CustomerPageResponse.class,
                 uniqueJwtId("CUSTOMER_LIST_"));
     }
 
@@ -1015,7 +1043,7 @@ public class OpenApiClient {
         if (withBody) {
             headers.put(OpenApiConstants.HEADER_CONTENT_TYPE, OpenApiConstants.CONTENT_TYPE);
         }
-        String headersJson = JsonSupport.toJson(headers);
+        String headersJson = JsonSupport.toJson(OpenApiLogSanitizer.sanitizeHeaders(headers));
         log.info("请求头: {}", headersJson);
 
         return headers;
@@ -1222,6 +1250,15 @@ public class OpenApiClient {
         requireText(request.getLastname(), "lastname");
         requireText(request.getEmail(), "email");
         requireText(request.getCountry(), "country");
+    }
+
+    private void validateCustomerPage(int pageNo, int pageSize) {
+        if (pageNo < MIN_PAGE_NO) {
+            throw new OpenApiValidationException("pageNo must be greater than or equal to 1");
+        }
+        if (pageSize < MIN_PAGE_SIZE || pageSize > MAX_CUSTOMER_PAGE_SIZE) {
+            throw new OpenApiValidationException("pageSize must be between 1 and 100");
+        }
     }
 
     /**

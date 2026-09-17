@@ -265,10 +265,13 @@ public final class DemoApiCatalog {
 
     private static DemoApiDefinition customerList() {
         return api("customer-list", "customer", "客户", "列出客户",
-                "查询当前商户下的客户列表。",
+                "分页查询当前商户下的客户列表，默认每页 100 条，单页最大 100 条。",
                 "查询列表", OpenApiEndpoint.CUSTOMER_LIST,
-                fields(merchantNo()),
-                customerResponseFields());
+                fields(
+                        merchantNo(),
+                        field("pageNo", "页码", "可选，从 1 开始，默认 1。", false, "1", "1"),
+                        field("pageSize", "每页数量", "可选，范围 1-100，默认 100。", false, "100", "100")),
+                customerPageResponseFields());
     }
 
     private static List<DemoApiField> customerRequestFields(boolean update) {
@@ -465,5 +468,17 @@ public final class DemoApiCatalog {
                 field("data.firstname", "firstname", "客户名。", false, "", ""),
                 field("data.lastname", "lastname", "客户姓。", false, "", ""),
                 field("data.email", "email", "客户邮箱。", false, "", ""));
+    }
+
+    private static List<DemoApiField> customerPageResponseFields() {
+        return fields(
+                field("code", "code", "业务响应码，0 表示成功。", false, "", ""),
+                field("msg", "msg", "业务响应说明。", false, "", ""),
+                field("data.list[].customerId", "customerId", "网关客户 ID。", false, "", ""),
+                field("data.pageNo", "pageNo", "当前页码。", false, "", ""),
+                field("data.pageSize", "pageSize", "每页请求数量。", false, "", ""),
+                field("data.currentPageSize", "currentPageSize", "当前页实际返回数量。", false, "", ""),
+                field("data.total", "total", "当前商户客户总量。", false, "", ""),
+                field("data.totalPages", "totalPages", "总页数。", false, "", ""));
     }
 }

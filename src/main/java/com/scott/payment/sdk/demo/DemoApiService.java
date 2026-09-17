@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Collections;
 import java.util.List;
@@ -104,8 +105,14 @@ public class DemoApiService {
                 requestForDisplay = oneField("customerId", text(params, "customerId"));
                 result = client.deleteCustomer(required(params, "customerId"));
             } else if ("customer-list".equals(definition.getCode())) {
-                requestForDisplay = oneField("merchantNo", config.getMerchantId());
-                result = client.listCustomers();
+                int pageNo = integerOrDefault(params, "pageNo", 1);
+                int pageSize = integerOrDefault(params, "pageSize", 100);
+                Map<String, Object> pageRequest = new LinkedHashMap<String, Object>();
+                pageRequest.put("merchantNo", config.getMerchantId());
+                pageRequest.put("pageNo", pageNo);
+                pageRequest.put("pageSize", pageSize);
+                requestForDisplay = pageRequest;
+                result = client.listCustomers(pageNo, pageSize);
             } else {
                 throw new IllegalArgumentException("Unsupported demo api: " + definition.getCode());
             }
@@ -318,6 +325,11 @@ public class DemoApiService {
 
     private Integer integer(Map<String, String> params, String name) {
         return Integer.valueOf(required(params, name));
+    }
+
+    private int integerOrDefault(Map<String, String> params, String name, int defaultValue) {
+        String value = text(params, name);
+        return StringUtils.isBlank(value) ? defaultValue : Integer.parseInt(value);
     }
 
     private String required(Map<String, String> params, String name) {

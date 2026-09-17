@@ -601,7 +601,7 @@ OpenApiResult<CustomerResponse> result = client.createCustomer(request);
 | 查询客户 | `retrieveCustomer` | GET | `/pay-api/mer/customers/{customerId}` | 无 | 响应可能包含个人信息 |
 | 更新客户 | `updateCustomer` | PUT | `/pay-api/mer/customers/{customerId}` | 加密 `livemode + data` | 会修改网关客户资料 |
 | 删除客户 | `deleteCustomer` | DELETE | `/pay-api/mer/customers/{customerId}` | 无 | 会删除网关客户资料 |
-| 列出客户 | `listCustomers` | GET | `/pay-api/mer/customers` | 无 | 响应可能包含个人信息列表 |
+| 分页列出客户 | `listCustomers()` / `listCustomers(pageNo, pageSize)` | GET | `/pay-api/mer/customers` | 无 | 默认 1/100，单页最大 100；`data` 包含 list、pageNo、pageSize、currentPageSize、total、totalPages |
 
 ## 用例目录说明
 
